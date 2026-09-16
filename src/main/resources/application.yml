@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: sso-okta
+
+  security:
+    oauth2:
+      client:
+        registration:
+          okta:
+            client-id: ${OKTA_CLIENT_ID}
+            client-secret: ${OKTA_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/okta"
+        provider:
+          okta:
+            issuer-uri: https://${OKTA_DOMAIN}/oauth2/default
+            user-name-attribute: email
+
+  thymeleaf:
+    cache: false
+
+# Logging (helpful during development)
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.example.sso: DEBUG

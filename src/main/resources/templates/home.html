@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SSO Demo — Home</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", sans-serif; background: #f7f8fa; color: #1f2328; }
+        header { background: #1f2328; color: #fff; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 18px; font-weight: 600; }
+        header nav a { color: #ccc; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        header nav a:hover { color: #fff; }
+        main { max-width: 760px; margin: 80px auto; padding: 0 24px; text-align: center; }
+        h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        p { color: #57606a; font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
+        .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; font-size: 15px; font-weight: 600; text-decoration: none; }
+        .btn-primary { background: #3b82d4; color: #fff; }
+        .btn-primary:hover { background: #2563c4; }
+        .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; margin-left: 12px; }
+        .badges { margin-top: 48px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+        .badge { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 24px; font-size: 13px; color: #57606a; min-width: 160px; }
+        .badge strong { display: block; font-size: 15px; color: #1f2328; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🔐 SSO Demo</h1>
+    <nav>
+        <a th:href="@{/}">Home</a>
+        <span sec:authorize="isAuthenticated()">
+            <a th:href="@{/dashboard}">Dashboard</a>
+            <a th:href="@{/logout}">Logout</a>
+        </span>
+        <span sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">Login with Okta</a>
+        </span>
+    </nav>
+</header>
+
+<main>
+    <h2>Single Sign-On with Okta</h2>
+    <p>This Spring Boot application demonstrates SSO using Okta as the Identity Provider via OpenID Connect (OIDC).<br/>
+       Click below to authenticate — you will be redirected to Okta's login page.</p>
+
+    <span sec:authorize="isAnonymous()">
+        <a class="btn btn-primary" th:href="@{/login}">Login with Okta →</a>
+        <a class="btn btn-secondary" href="https://developer.okta.com" target="_blank">Okta Docs</a>
+    </span>
+    <span sec:authorize="isAuthenticated()">
+        <a class="btn btn-primary" th:href="@{/dashboard}">Go to Dashboard →</a>
+    </span>
+
+    <div class="badges">
+        <div class="badge"><strong>Protocol</strong>OpenID Connect (OIDC)</div>
+        <div class="badge"><strong>Framework</strong>Spring Boot 3 + Security</div>
+        <div class="badge"><strong>Identity Provider</strong>Okta</div>
+        <div class="badge"><strong>Token</strong>JWT (ID + Access)</div>
+    </div>
+</main>
+
+</body>
+</html>
