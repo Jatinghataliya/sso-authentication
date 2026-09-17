@@ -132,18 +132,20 @@ public class SecurityConfig {
                                                    TokenRefreshFilter tokenRefreshFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
+                // Publicly accessible pages
                 .requestMatchers("/", "/public/**", "/css/**", "/js/**",
                     "/access-denied", "/login",
-                    "/oauth2/authorization/**",
-                    "/login/oauth2/code/**"
+                    "/oauth2/authorization/**"            // OAuth2 initiation — must be public
                 ).permitAll()
+                // Role-protected pages
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
 
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/")
+                .loginPage("/")                           // custom login page
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
@@ -152,12 +154,15 @@ public class SecurityConfig {
                 )
             )
 
+            // Redirect unauthenticated requests to / instead of default /login
             .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) ->
+                    response.sendRedirect("/"))
                 .accessDeniedPage("/access-denied")
             )
 
             .logout(logout -> logout
-                .logoutRequestMatcher(new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/logout"))  // allow GET /logout
+                .logoutRequestMatcher(new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/logout"))
                 .logoutSuccessHandler(oidcLogoutSuccessHandler())
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
