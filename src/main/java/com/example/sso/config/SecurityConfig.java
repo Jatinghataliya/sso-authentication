@@ -40,6 +40,9 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.client.registration.okta.client-id}")
     private String clientId;
 
+    @Value("${app.base-url}")
+    private String appBaseUrl;
+
     /**
      * OAuth2AuthorizedClientManager with refresh_token support.
      * This is the core bean that TokenRefreshFilter uses to silently renew tokens.
@@ -82,7 +85,7 @@ public class SecurityConfig {
             public void onLogoutSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-                String returnTo = "http://localhost:8081/";
+                String returnTo = appBaseUrl + "/";
 
                 // Strip trailing slash from issuerUri to avoid double-slash
                 String baseUrl = issuerUri.endsWith("/")

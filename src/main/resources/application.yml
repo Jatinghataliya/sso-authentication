@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
 
 spring:
   application:
@@ -37,7 +37,11 @@ spring:
   thymeleaf:
     cache: false
 
-# Logging (helpful during development)
+# App-level config (used in logout redirect, etc.)
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8081}
+
+# Logging
 logging:
   level:
     org.springframework.security: DEBUG
