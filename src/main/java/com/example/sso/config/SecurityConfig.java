@@ -145,7 +145,7 @@ public class SecurityConfig {
             )
 
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/")                           // custom login page
+                // No loginPage() — authenticationEntryPoint below handles redirect to /
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
@@ -154,10 +154,10 @@ public class SecurityConfig {
                 )
             )
 
-            // Redirect unauthenticated requests to / instead of default /login
             .exceptionHandling(ex -> ex
+                // Unauthenticated → redirect to our home page (not Spring's /login)
                 .authenticationEntryPoint((request, response, authException) ->
-                    response.sendRedirect("/"))
+                    response.sendRedirect(request.getContextPath() + "/"))
                 .accessDeniedPage("/access-denied")
             )
 

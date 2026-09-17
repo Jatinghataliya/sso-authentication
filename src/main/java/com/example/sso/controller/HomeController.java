@@ -15,11 +15,11 @@ public class HomeController {
     }
 
     /**
-     * /login redirects to home page which has the styled provider buttons.
-     * Spring Security's default /login page is replaced by our home.html.
+     * Spring Security redirects unauthenticated users to /login by default.
+     * We forward them to / which shows our styled login page with both provider buttons.
      */
     @GetMapping("/login")
     public String login() {
-        return "redirect:/";
+        return "home";
     }
 }
