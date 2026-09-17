@@ -53,12 +53,15 @@ public class DashboardController {
             model.addAttribute("claims",  oidcUser.getClaims());
         } else {
             // GitHub path — attributes come from the GitHub userinfo API
-            String name  = oauth2User.getAttribute("name");
-            String login = oauth2User.getAttribute("login");  // GitHub username
-            String email = oauth2User.getAttribute("email");
+            String name    = oauth2User.getAttribute("name");
+            String login   = oauth2User.getAttribute("login");   // GitHub username
+            String email   = oauth2User.getAttribute("email");
+            Object idObj   = oauth2User.getAttribute("id");      // Integer from GitHub API
+            String subject = idObj != null ? idObj.toString() : login;
+
             model.addAttribute("name",    name != null ? name : login);
             model.addAttribute("email",   email != null ? email : login + "@github");
-            model.addAttribute("subject", String.valueOf(oauth2User.getAttribute("id")));
+            model.addAttribute("subject", subject);
             model.addAttribute("claims",  oauth2User.getAttributes());
             model.addAttribute("githubLogin",   login);
             model.addAttribute("githubAvatar",  oauth2User.getAttribute("avatar_url"));

@@ -139,7 +139,7 @@
         <table>
             <tr th:each="entry : ${claims}">
                 <td th:text="${entry.key}">key</td>
-                <td th:text="${entry.value}">value</td>
+                <td th:text="${entry.value != null ? entry.value.toString() : ''}">value</td>
             </tr>
         </table>
     </div>
