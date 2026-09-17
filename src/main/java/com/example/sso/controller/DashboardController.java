@@ -4,8 +4,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,20 +25,47 @@ public class DashboardController {
     private static final DateTimeFormatter FMT =
         DateTimeFormatter.ofPattern("HH:mm:ss dd-MMM-yyyy").withZone(ZoneId.systemDefault());
 
+    private final OAuth2AuthorizedClientService authorizedClientService;
+
+    public DashboardController(OAuth2AuthorizedClientService authorizedClientService) {
+        this.authorizedClientService = authorizedClientService;
+    }
+
     /**
-     * Protected dashboard — available to all authenticated users.
-     * Passes roles and token expiry info to the template.
+     * Protected dashboard — works for both Auth0 (OidcUser) and GitHub (OAuth2User).
+     * Detects which provider was used and extracts user info accordingly.
      */
     @GetMapping("/dashboard")
-    public String dashboard(@AuthenticationPrincipal OidcUser user,
-                            @RegisteredOAuth2AuthorizedClient("okta") OAuth2AuthorizedClient authorizedClient,
-                            Model model) {
-        model.addAttribute("name",    user.getFullName());
-        model.addAttribute("email",   user.getEmail());
-        model.addAttribute("subject", user.getSubject());
-        model.addAttribute("claims",  user.getClaims());
+    public String dashboard(@AuthenticationPrincipal OAuth2User oauth2User, Model model) {
 
-        // Roles
+        // Detect provider from authentication token
+        OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken)
+            SecurityContextHolder.getContext().getAuthentication();
+        String provider = authToken.getAuthorizedClientRegistrationId(); // "okta" or "github"
+        model.addAttribute("provider", provider);
+
+        // Extract user info — OidcUser (Auth0) vs OAuth2User (GitHub)
+        if (oauth2User instanceof OidcUser oidcUser) {
+            // Auth0 path
+            model.addAttribute("name",    oidcUser.getFullName());
+            model.addAttribute("email",   oidcUser.getEmail());
+            model.addAttribute("subject", oidcUser.getSubject());
+            model.addAttribute("claims",  oidcUser.getClaims());
+        } else {
+            // GitHub path — attributes come from the GitHub userinfo API
+            String name  = oauth2User.getAttribute("name");
+            String login = oauth2User.getAttribute("login");  // GitHub username
+            String email = oauth2User.getAttribute("email");
+            model.addAttribute("name",    name != null ? name : login);
+            model.addAttribute("email",   email != null ? email : login + "@github");
+            model.addAttribute("subject", String.valueOf(oauth2User.getAttribute("id")));
+            model.addAttribute("claims",  oauth2User.getAttributes());
+            model.addAttribute("githubLogin",   login);
+            model.addAttribute("githubAvatar",  oauth2User.getAttribute("avatar_url"));
+            model.addAttribute("githubProfile", oauth2User.getAttribute("html_url"));
+        }
+
+        // Roles (from Spring Security authorities — same for both providers)
         List<String> roles = SecurityContextHolder.getContext()
             .getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
@@ -46,18 +75,20 @@ public class DashboardController {
         model.addAttribute("roles", roles);
         model.addAttribute("isAdmin", roles.contains("ADMIN"));
 
-        // Token expiry info
+        // Token expiry info (from authorized client)
+        OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
+            provider, authToken.getName());
+
         if (authorizedClient != null && authorizedClient.getAccessToken() != null) {
             Instant expiresAt = authorizedClient.getAccessToken().getExpiresAt();
             if (expiresAt != null) {
                 long secondsLeft = expiresAt.getEpochSecond() - Instant.now().getEpochSecond();
-                model.addAttribute("tokenExpiresAt", FMT.format(expiresAt));
+                model.addAttribute("tokenExpiresAt",   FMT.format(expiresAt));
                 model.addAttribute("tokenSecondsLeft", secondsLeft);
-                model.addAttribute("tokenExpired", secondsLeft <= 0);
+                model.addAttribute("tokenExpired",     secondsLeft <= 0);
             }
         }
 
-        // Refresh token present?
         boolean hasRefreshToken = authorizedClient != null
             && authorizedClient.getRefreshToken() != null;
         model.addAttribute("hasRefreshToken", hasRefreshToken);
@@ -66,56 +97,83 @@ public class DashboardController {
     }
 
     /**
-     * Admin-only page — restricted by SecurityConfig (hasRole("ADMIN")).
-     * Also protected at method level with @PreAuthorize as a second layer.
+     * Admin-only page.
      */
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public String admin(@AuthenticationPrincipal OidcUser user, Model model) {
-        model.addAttribute("name", user.getFullName());
-        model.addAttribute("email", user.getEmail());
+    public String admin(@AuthenticationPrincipal OAuth2User user, Model model) {
+        String name = (user instanceof OidcUser o) ? o.getFullName()
+            : getAttrStr(user, "name", "login");
+        String email = (user instanceof OidcUser o) ? o.getEmail()
+            : getAttrStr(user, "email", "login");
+        model.addAttribute("name", name);
+        model.addAttribute("email", email);
         return "admin";
     }
 
     /**
-     * User-only page — restricted by SecurityConfig (hasRole("USER")).
+     * User-only profile page.
      */
     @GetMapping("/user/profile")
     @PreAuthorize("hasRole('USER')")
-    public String userProfile(@AuthenticationPrincipal OidcUser user, Model model) {
-        model.addAttribute("name", user.getFullName());
-        model.addAttribute("email", user.getEmail());
+    public String userProfile(@AuthenticationPrincipal OAuth2User user, Model model) {
+        String name = (user instanceof OidcUser o) ? o.getFullName()
+            : getAttrStr(user, "name", "login");
+        String email = (user instanceof OidcUser o) ? o.getEmail()
+            : getAttrStr(user, "email", "login");
+        model.addAttribute("name", name);
+        model.addAttribute("email", email);
         return "user-profile";
     }
 
     /**
-     * Access denied page — shown when a user tries to access a page they don't have a role for.
+     * Access denied page.
      */
     @GetMapping("/access-denied")
-    public String accessDenied(@AuthenticationPrincipal OidcUser user, Model model) {
-        if (user != null) model.addAttribute("name", user.getFullName());
+    public String accessDenied(@AuthenticationPrincipal OAuth2User user, Model model) {
+        if (user != null) {
+            String name = (user instanceof OidcUser o) ? o.getFullName()
+                : getAttrStr(user, "name", "login");
+            model.addAttribute("name", name);
+        }
         return "access-denied";
     }
 
     /**
-     * REST endpoint — returns user info + roles as JSON.
+     * REST endpoint — returns user info + roles + provider as JSON.
      */
     @GetMapping("/api/me")
     @ResponseBody
-    public Map<String, Object> me(@AuthenticationPrincipal OidcUser user) {
-        List<String> roles = SecurityContextHolder.getContext()
-            .getAuthentication().getAuthorities().stream()
+    public Map<String, Object> me(@AuthenticationPrincipal OAuth2User user) {
+        OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken)
+            SecurityContextHolder.getContext().getAuthentication();
+
+        List<String> roles = authToken.getAuthorities().stream()
             .map(a -> a.getAuthority())
             .filter(a -> a.startsWith("ROLE_"))
             .map(a -> a.substring(5))
             .toList();
 
+        String name  = (user instanceof OidcUser o) ? o.getFullName()
+            : getAttrStr(user, "name", "login");
+        String email = (user instanceof OidcUser o) ? o.getEmail()
+            : getAttrStr(user, "email", "login");
+
         return Map.of(
-            "subject", user.getSubject(),
-            "name",    user.getFullName(),
-            "email",   user.getEmail(),
-            "roles",   roles,
-            "claims",  user.getClaims()
+            "provider", authToken.getAuthorizedClientRegistrationId(),
+            "name",     name != null ? name : "",
+            "email",    email != null ? email : "",
+            "roles",    roles,
+            "attributes", user.getAttributes()
         );
+    }
+
+    // Helper — returns first non-null attribute value from a list of keys
+    private String getAttrStr(OAuth2User user, String... keys) {
+        for (String key : keys) {
+            Object val = user.getAttribute(key);
+            if (val != null) return val.toString();
+        }
+        return null;
     }
 }

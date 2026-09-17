@@ -101,7 +101,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Custom OidcUserService — enriches user with roles from Auth0 JWT claims.
+     * Custom OidcUserService — enriches Auth0 user with roles from JWT claims.
      */
     @Bean
     public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
@@ -118,18 +118,19 @@ public class SecurityConfig {
                                                    TokenRefreshFilter tokenRefreshFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/public/**", "/css/**", "/js/**", "/access-denied").permitAll()
+                .requestMatchers("/", "/public/**", "/css/**", "/js/**", "/access-denied", "/login").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
 
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/oauth2/authorization/okta")
+                // No loginPage() — Spring will auto-serve /login showing both providers
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/login?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
-                    .oidcUserService(oidcUserService())
+                    .oidcUserService(oidcUserService())   // Auth0 (OIDC)
+                    // GitHub uses default DefaultOAuth2UserService automatically
                 )
             )
 

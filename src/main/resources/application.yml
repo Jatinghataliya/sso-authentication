@@ -3,12 +3,13 @@ server:
 
 spring:
   application:
-    name: sso-okta
+    name: sso-demo
 
   security:
     oauth2:
       client:
         registration:
+          # ── Provider 1: Auth0 (OIDC) ──────────────────────────────
           okta:
             client-id: ${AUTH0_CLIENT_ID}
             client-secret: ${AUTH0_CLIENT_SECRET}
@@ -19,6 +20,15 @@ spring:
               - offline_access
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/okta"
+
+          # ── Provider 2: GitHub (OAuth2) ───────────────────────────
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - read:user
+              - user:email
+
         provider:
           okta:
             issuer-uri: https://${AUTH0_DOMAIN}/

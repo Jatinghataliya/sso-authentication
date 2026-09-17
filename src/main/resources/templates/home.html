@@ -12,16 +12,24 @@
         header h1 { font-size: 18px; font-weight: 600; }
         header nav a { color: #ccc; text-decoration: none; margin-left: 16px; font-size: 14px; }
         header nav a:hover { color: #fff; }
-        main { max-width: 760px; margin: 80px auto; padding: 0 24px; text-align: center; }
+        main { max-width: 760px; margin: 60px auto; padding: 0 24px; text-align: center; }
         h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
-        p { color: #57606a; font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
-        .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; font-size: 15px; font-weight: 600; text-decoration: none; }
-        .btn-primary { background: #3b82d4; color: #fff; }
-        .btn-primary:hover { background: #2563c4; }
-        .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; margin-left: 12px; }
-        .badges { margin-top: 48px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
-        .badge { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 24px; font-size: 13px; color: #57606a; min-width: 160px; }
-        .badge strong { display: block; font-size: 15px; color: #1f2328; margin-bottom: 4px; }
+        .subtitle { color: #57606a; font-size: 16px; line-height: 1.6; margin-bottom: 40px; }
+        /* Login buttons */
+        .login-options { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 48px; }
+        .btn-login { display: flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; border: 1px solid #e5e7eb; background: #fff; color: #1f2328; transition: box-shadow 0.15s; }
+        .btn-login:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-login svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .btn-auth0 { border-color: #eb5424; color: #eb5424; }
+        .btn-auth0:hover { background: #fef3f2; }
+        .btn-github { border-color: #24292f; color: #24292f; }
+        .btn-github:hover { background: #f6f8fa; }
+        .btn-dashboard { background: #3b82d4; color: #fff; border-color: #3b82d4; font-size: 15px; font-weight: 600; padding: 14px 32px; border-radius: 8px; text-decoration: none; display: inline-block; }
+        /* Info badges */
+        .badges { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+        .badge { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; font-size: 13px; color: #57606a; text-align: left; }
+        .badge strong { display: block; font-size: 14px; color: #1f2328; margin-bottom: 4px; font-weight: 600; }
+        .divider { margin: 0 0 40px 0; color: #57606a; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -30,34 +38,46 @@
     <h1>🔐 SSO Demo</h1>
     <nav>
         <a th:href="@{/}">Home</a>
-        <span sec:authorize="isAuthenticated()">
+        <sec:authorize access="isAuthenticated()">
             <a th:href="@{/dashboard}">Dashboard</a>
             <a th:href="@{/logout}">Logout</a>
-        </span>
-        <span sec:authorize="isAnonymous()">
-            <a th:href="@{/login}">Login with Okta</a>
-        </span>
+        </sec:authorize>
     </nav>
 </header>
 
 <main>
-    <h2>Single Sign-On with Okta</h2>
-    <p>This Spring Boot application demonstrates SSO using Okta as the Identity Provider via OpenID Connect (OIDC).<br/>
-       Click below to authenticate — you will be redirected to Okta's login page.</p>
+    <h2>Single Sign-On Demo</h2>
+    <p class="subtitle">Spring Boot 3 + Spring Security — supports multiple Identity Providers.<br/>
+        Choose a provider below to authenticate.</p>
 
-    <span sec:authorize="isAnonymous()">
-        <a class="btn btn-primary" th:href="@{/login}">Login with Okta →</a>
-        <a class="btn btn-secondary" href="https://developer.okta.com" target="_blank">Okta Docs</a>
-    </span>
-    <span sec:authorize="isAuthenticated()">
-        <a class="btn btn-primary" th:href="@{/dashboard}">Go to Dashboard →</a>
-    </span>
+    <sec:authorize access="isAnonymous()">
+        <div class="login-options">
+            <!-- Auth0 Login -->
+            <a class="btn-login btn-auth0" th:href="@{/oauth2/authorization/okta}">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm0 4.2l3.7 11.4H8.3L12 4.2zm-6.6 8.3H2.1c.5-3.1 2.4-5.7 5-7.2L6.5 8.5l-.1 4zm1.2.3l1.7-5.2 1.6 5.2H6.6zm9.2-.3l-.1-4-1.6-3.1c2.6 1.5 4.5 4.1 5 7.1h-3.3zm-1.3.3h-3.3l1.6-5.2 1.7 5.2z"/></svg>
+                Sign in with Auth0
+            </a>
+
+            <!-- GitHub Login -->
+            <a class="btn-login btn-github" th:href="@{/oauth2/authorization/github}">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                Sign in with GitHub
+            </a>
+        </div>
+        <p class="divider">Each provider uses OAuth2 / OpenID Connect</p>
+    </sec:authorize>
+
+    <sec:authorize access="isAuthenticated()">
+        <a class="btn-dashboard" th:href="@{/dashboard}">Go to Dashboard →</a>
+    </sec:authorize>
 
     <div class="badges">
-        <div class="badge"><strong>Protocol</strong>OpenID Connect (OIDC)</div>
+        <div class="badge"><strong>Protocol</strong>OAuth2 + OpenID Connect</div>
         <div class="badge"><strong>Framework</strong>Spring Boot 3 + Security</div>
-        <div class="badge"><strong>Identity Provider</strong>Okta</div>
-        <div class="badge"><strong>Token</strong>JWT (ID + Access)</div>
+        <div class="badge"><strong>Provider 1</strong>Auth0 (OIDC)</div>
+        <div class="badge"><strong>Provider 2</strong>GitHub (OAuth2)</div>
+        <div class="badge"><strong>Roles</strong>ADMIN / USER (RBAC)</div>
+        <div class="badge"><strong>Token</strong>Auto-refresh (silent)</div>
     </div>
 </main>
 

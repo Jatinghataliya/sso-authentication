@@ -67,7 +67,14 @@
     <div class="welcome">
         <div class="avatar" th:text="${name != null ? name.substring(0,1).toUpperCase() : 'U'}">U</div>
         <h2>Welcome, <span th:text="${name}">User</span>!</h2>
-        <p>Authenticated via <strong>Auth0 SSO</strong> (OpenID Connect)</p>
+        <p th:if="${provider == 'okta'}">Authenticated via <strong>Auth0 SSO</strong> (OpenID Connect)</p>
+        <p th:if="${provider == 'github'}">
+            Authenticated via
+            <strong>GitHub</strong> (OAuth2)
+            <span th:if="${githubLogin != null}">
+                — <a th:href="${githubProfile}" target="_blank" th:text="'@' + ${githubLogin}" style="color:#3b82d4;">@user</a>
+            </span>
+        </p>
         <!-- Roles -->
         <div class="roles" th:if="${!roles.isEmpty()}">
             <span th:each="role : ${roles}"
