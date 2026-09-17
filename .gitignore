@@ -1,0 +1,46 @@
+# -- Compiled Output ---------------------------------------------
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# -- Secrets — NEVER commit real credentials ---------------------
+.env
+*.env
+application-local.yml
+application-local.properties
+
+# -- Maven --------------------------------------------------------
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# -- IDE — IntelliJ IDEA ------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# -- IDE — VS Code ------------------------------------------------
+.vscode/
+*.code-workspace
+
+# -- IDE — Eclipse ------------------------------------------------
+.classpath
+.project
+.settings/
+bin/
+
+# -- OS -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -- Logs ---------------------------------------------------------
+*.log
+logs/
+spring.log
+
+# -- Test reports -------------------------------------------------
+surefire-reports/
