@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     /**
-     * Public home page — accessible without login.
+     * Public home page — shows both login buttons (Auth0 + GitHub).
      */
     @GetMapping("/")
     public String home() {
@@ -15,12 +15,11 @@ public class HomeController {
     }
 
     /**
-     * Triggers the Okta OIDC login flow.
-     * Spring Security intercepts /oauth2/authorization/okta automatically,
-     * so this method is only here for completeness / explicit mapping.
+     * /login redirects to home page which has the styled provider buttons.
+     * Spring Security's default /login page is replaced by our home.html.
      */
     @GetMapping("/login")
     public String login() {
-        return "redirect:/oauth2/authorization/okta";
+        return "redirect:/";
     }
 }

@@ -128,9 +128,9 @@ public class SecurityConfig {
             )
 
             .oauth2Login(oauth2 -> oauth2
-                // No loginPage() — Spring will auto-serve /login showing both providers
+                .loginPage("/")                           // use our home page as login page
                 .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
+                .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(oidcUserService())   // Auth0 (OIDC)
                     // GitHub uses default DefaultOAuth2UserService automatically
