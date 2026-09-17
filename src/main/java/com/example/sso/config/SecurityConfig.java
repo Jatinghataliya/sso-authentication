@@ -85,20 +85,30 @@ public class SecurityConfig {
             public void onLogoutSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-                String returnTo = appBaseUrl + "/";
 
-                // Strip trailing slash from issuerUri to avoid double-slash
-                String baseUrl = issuerUri.endsWith("/")
-                    ? issuerUri.substring(0, issuerUri.length() - 1)
-                    : issuerUri;
+                // Determine which provider was used
+                String provider = "";
+                if (authentication instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken oauthToken) {
+                    provider = oauthToken.getAuthorizedClientRegistrationId();
+                }
 
-                String logoutUrl = UriComponentsBuilder
-                    .fromHttpUrl(baseUrl + "/v2/logout")
-                    .queryParam("client_id", clientId)
-                    .queryParam("returnTo", returnTo)
-                    .toUriString();
-
-                response.sendRedirect(logoutUrl);
+                if ("okta".equals(provider)) {
+                    // Auth0: redirect to /v2/logout so Auth0 also clears its session
+                    String returnTo = appBaseUrl + "/";
+                    String baseUrl = issuerUri.endsWith("/")
+                        ? issuerUri.substring(0, issuerUri.length() - 1)
+                        : issuerUri;
+                    String logoutUrl = UriComponentsBuilder
+                        .fromHttpUrl(baseUrl + "/v2/logout")
+                        .queryParam("client_id", clientId)
+                        .queryParam("returnTo", returnTo)
+                        .toUriString();
+                    response.sendRedirect(logoutUrl);
+                } else {
+                    // GitHub / Google — local session already cleared by Spring Security,
+                    // just redirect back to home
+                    response.sendRedirect(appBaseUrl + "/");
+                }
             }
         };
     }

@@ -68,6 +68,13 @@
         <div class="avatar" th:text="${name != null ? name.substring(0,1).toUpperCase() : 'U'}">U</div>
         <h2>Welcome, <span th:text="${name}">User</span>!</h2>
         <p th:if="${provider == 'okta'}">Authenticated via <strong>Auth0 SSO</strong> (OpenID Connect)</p>
+        <p th:if="${provider == 'google'}">
+            Authenticated via <strong>Google</strong> (OpenID Connect)
+            <span th:if="${googlePicture != null}">
+                — <img th:src="${googlePicture}" alt="Google profile picture"
+                       style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-left:4px;"/>
+            </span>
+        </p>
         <p th:if="${provider == 'github'}">
             Authenticated via
             <strong>GitHub</strong> (OAuth2)
@@ -90,8 +97,8 @@
         </p>
     </div>
 
-    <!-- Role-Based Access Cards (Auth0 only) -->
-    <div class="access-grid" th:if="${provider == 'okta'}">
+    <!-- Role-Based Access Cards (Auth0 only — roles are assigned in Auth0) -->
+    <div class="access-grid" th:if="${provider == 'okta' or provider == 'google'}">
         <!-- User Section -->
         <div th:classappend="${#authorization.expression('hasRole(''USER'')')} ? 'access-allowed' : 'access-denied-card'" class="access-card">
             <h4>👤 User Area</h4>

@@ -53,8 +53,8 @@ public class TokenRefreshFilter extends OncePerRequestFilter {
         if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
             String clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
 
-            // GitHub tokens don't expire — skip refresh entirely for GitHub
-            if ("github".equals(clientRegistrationId)) {
+            // GitHub and Google tokens don't use refresh_token here — skip both
+            if ("github".equals(clientRegistrationId) || "google".equals(clientRegistrationId)) {
                 filterChain.doFilter(request, response);
                 return;
             }

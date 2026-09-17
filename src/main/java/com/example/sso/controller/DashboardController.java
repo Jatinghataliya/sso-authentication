@@ -41,16 +41,20 @@ public class DashboardController {
         // Detect provider from authentication token
         OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken)
             SecurityContextHolder.getContext().getAuthentication();
-        String provider = authToken.getAuthorizedClientRegistrationId(); // "okta" or "github"
+        String provider = authToken.getAuthorizedClientRegistrationId(); // "okta", "github", or "google"
         model.addAttribute("provider", provider);
 
-        // Extract user info — OidcUser (Auth0) vs OAuth2User (GitHub)
+        // Extract user info — OidcUser (Auth0 or Google) vs OAuth2User (GitHub)
         if (oauth2User instanceof OidcUser oidcUser) {
-            // Auth0 path
+            // Auth0 and Google both return OidcUser
             model.addAttribute("name",    oidcUser.getFullName());
             model.addAttribute("email",   oidcUser.getEmail());
             model.addAttribute("subject", oidcUser.getSubject());
             model.addAttribute("claims",  oidcUser.getClaims());
+            // Google-specific: picture attribute
+            if ("google".equals(provider)) {
+                model.addAttribute("googlePicture", oidcUser.getAttribute("picture"));
+            }
         } else {
             // GitHub path — attributes come from the GitHub userinfo API
             String name    = oauth2User.getAttribute("name");

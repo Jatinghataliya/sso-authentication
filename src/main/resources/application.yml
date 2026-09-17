@@ -29,10 +29,22 @@ spring:
               - read:user
               - user:email
 
+          # ── Provider 3: Google (OIDC) ─────────────────────────────
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            # NOTE: no offline_access — Google requires special approval for refresh tokens
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+
         provider:
           okta:
             issuer-uri: https://${AUTH0_DOMAIN}/
             user-name-attribute: email
+          # google provider is built-in — Spring Boot auto-configures it
 
   thymeleaf:
     cache: false

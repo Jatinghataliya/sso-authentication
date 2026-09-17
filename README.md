@@ -1,9 +1,10 @@
-# Spring Boot SSO — Auth0 + GitHub
+# Spring Boot SSO — Auth0 + GitHub + Google
 
 A complete Spring Boot 3.2 application demonstrating **Single Sign-On (SSO)** with:
 
 - 🔐 **Auth0** via OpenID Connect (OIDC) — full ID token, roles, silent refresh
 - 🐙 **GitHub** via OAuth2 — avatar, username, public profile
+- 🔵 **Google** via OpenID Connect (OIDC) — profile picture, email, name
 - 🛡️ **Role-based access control** (ADMIN / USER) driven by Auth0 Actions
 - 🔄 **Silent token refresh** — refresh_token auto-renew, no redirects
 - 🚪 **Single logout** — Auth0 `/v2/logout` + session/cookie clear
@@ -103,6 +104,19 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ---
 
+## Google OAuth App Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**
+4. Application type: **Web application**
+5. Add **Authorized redirect URIs**: `http://localhost:8081/login/oauth2/code/google`
+6. Copy **Client ID** and **Client Secret**
+
+> Spring Boot has built-in Google provider support — no extra provider config needed.
+
+---
+
 ## Local Configuration
 
 Create `src/main/resources/application-local.yml` (this file is gitignored):
@@ -119,6 +133,9 @@ spring:
           github:
             client-id: YOUR_GITHUB_CLIENT_ID
             client-secret: YOUR_GITHUB_CLIENT_SECRET
+          google:
+            client-id: YOUR_GOOGLE_CLIENT_ID
+            client-secret: YOUR_GOOGLE_CLIENT_SECRET
         provider:
           okta:
             issuer-uri: https://YOUR_AUTH0_DOMAIN/
