@@ -104,7 +104,8 @@ public class SecurityConfig {
     }
 
     /**
-     * Custom OidcUserService — enriches Auth0 user with roles from JWT claims.
+     * OIDC user service — only for Auth0. Enriches user with roles from JWT claims.
+     * GitHub is plain OAuth2 and must NOT use this service.
      */
     @Bean
     public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
@@ -116,6 +117,16 @@ public class SecurityConfig {
         };
     }
 
+    /**
+     * OAuth2 user service — for GitHub (plain OAuth2, no OIDC).
+     * Uses Spring's default DefaultOAuth2UserService.
+     */
+    @Bean
+    public OAuth2UserService<org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest,
+                             org.springframework.security.oauth2.core.user.OAuth2User> oauth2UserService() {
+        return new org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    TokenRefreshFilter tokenRefreshFilter) throws Exception {
@@ -123,8 +134,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/public/**", "/css/**", "/js/**",
                     "/access-denied", "/login",
-                    "/oauth2/authorization/**",           // allow OAuth2 initiation URLs
-                    "/login/oauth2/code/**"               // allow OAuth2 callbacks
+                    "/oauth2/authorization/**",
+                    "/login/oauth2/code/**"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
@@ -132,12 +143,12 @@ public class SecurityConfig {
             )
 
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/")                           // custom login page = our home
+                .loginPage("/")
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
-                    .oidcUserService(oidcUserService())   // Auth0 (OIDC)
-                    // GitHub uses default DefaultOAuth2UserService automatically
+                    .oidcUserService(oidcUserService())   // Auth0 — OIDC path
+                    .userService(oauth2UserService())      // GitHub — plain OAuth2 path
                 )
             )
 
