@@ -49,9 +49,15 @@ public class TokenRefreshFilter extends OncePerRequestFilter {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // Only process authenticated OAuth2 users
+        // Only process authenticated OAuth2 users — skip GitHub (no refresh token support)
         if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
             String clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
+
+            // GitHub tokens don't expire — skip refresh entirely for GitHub
+            if ("github".equals(clientRegistrationId)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             try {
                 // Ask the manager for the authorized client — it will refresh if needed

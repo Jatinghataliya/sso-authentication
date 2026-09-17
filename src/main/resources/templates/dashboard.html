@@ -82,13 +82,16 @@
                   th:classappend="${role == 'ADMIN'} ? 'role-admin' : (${role == 'USER'} ? 'role-user' : 'role-other')"
                   class="role-badge">ROLE</span>
         </div>
-        <p th:if="${roles.isEmpty()}" style="color:#ef4444; margin-top:10px; font-size:13px;">
+        <p th:if="${roles.isEmpty() and provider == 'okta'}" style="color:#ef4444; margin-top:10px; font-size:13px;">
             ⚠ No roles assigned. Ask your admin to assign roles in Auth0.
+        </p>
+        <p th:if="${provider == 'github'}" style="color:#57606a; margin-top:10px; font-size:13px;">
+            Signed in via GitHub — role-based access uses Auth0.
         </p>
     </div>
 
-    <!-- Role-Based Access Cards -->
-    <div class="access-grid">
+    <!-- Role-Based Access Cards (Auth0 only) -->
+    <div class="access-grid" th:if="${provider == 'okta'}">
         <!-- User Section -->
         <div th:classappend="${#authorization.expression('hasRole(''USER'')')} ? 'access-allowed' : 'access-denied-card'" class="access-card">
             <h4>👤 User Area</h4>
