@@ -37,6 +37,9 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.client.provider.okta.issuer-uri}")
     private String issuerUri;
 
+    @Value("${spring.security.oauth2.client.registration.okta.client-id}")
+    private String clientId;
+
     /**
      * OAuth2AuthorizedClientManager with refresh_token support.
      * This is the core bean that TokenRefreshFilter uses to silently renew tokens.
@@ -79,11 +82,15 @@ public class SecurityConfig {
             public void onLogoutSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-                String clientId = System.getenv("AUTH0_CLIENT_ID");
-                String returnTo  = "http://localhost:8081/";
+                String returnTo = "http://localhost:8081/";
+
+                // Strip trailing slash from issuerUri to avoid double-slash
+                String baseUrl = issuerUri.endsWith("/")
+                    ? issuerUri.substring(0, issuerUri.length() - 1)
+                    : issuerUri;
 
                 String logoutUrl = UriComponentsBuilder
-                    .fromHttpUrl(issuerUri + "v2/logout")
+                    .fromHttpUrl(baseUrl + "/v2/logout")
                     .queryParam("client_id", clientId)
                     .queryParam("returnTo", returnTo)
                     .toUriString();
@@ -131,6 +138,7 @@ public class SecurityConfig {
             )
 
             .logout(logout -> logout
+                .logoutRequestMatcher(new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/logout"))  // allow GET /logout
                 .logoutSuccessHandler(oidcLogoutSuccessHandler())
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
