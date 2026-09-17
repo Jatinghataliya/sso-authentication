@@ -121,14 +121,18 @@ public class SecurityConfig {
                                                    TokenRefreshFilter tokenRefreshFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/public/**", "/css/**", "/js/**", "/access-denied", "/login").permitAll()
+                .requestMatchers("/", "/public/**", "/css/**", "/js/**",
+                    "/access-denied", "/login",
+                    "/oauth2/authorization/**",           // allow OAuth2 initiation URLs
+                    "/login/oauth2/code/**"               // allow OAuth2 callbacks
+                ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
 
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/")                           // use our home page as login page
+                .loginPage("/")                           // custom login page = our home
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
