@@ -3,39 +3,65 @@ package com.example.sso.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 @Controller
 public class DashboardController {
 
+    private static final DateTimeFormatter FMT =
+        DateTimeFormatter.ofPattern("HH:mm:ss dd-MMM-yyyy").withZone(ZoneId.systemDefault());
+
     /**
      * Protected dashboard — available to all authenticated users.
-     * Passes roles to the template so UI can conditionally show sections.
+     * Passes roles and token expiry info to the template.
      */
     @GetMapping("/dashboard")
-    public String dashboard(@AuthenticationPrincipal OidcUser user, Model model) {
+    public String dashboard(@AuthenticationPrincipal OidcUser user,
+                            @RegisteredOAuth2AuthorizedClient("okta") OAuth2AuthorizedClient authorizedClient,
+                            Model model) {
         model.addAttribute("name",    user.getFullName());
         model.addAttribute("email",   user.getEmail());
         model.addAttribute("subject", user.getSubject());
         model.addAttribute("claims",  user.getClaims());
 
-        // Extract role names from Spring Security authorities (strip "ROLE_" prefix for display)
+        // Roles
         List<String> roles = SecurityContextHolder.getContext()
             .getAuthentication().getAuthorities().stream()
             .map(a -> a.getAuthority())
             .filter(a -> a.startsWith("ROLE_"))
-            .map(a -> a.substring(5))           // "ROLE_ADMIN" → "ADMIN"
+            .map(a -> a.substring(5))
             .toList();
-
         model.addAttribute("roles", roles);
         model.addAttribute("isAdmin", roles.contains("ADMIN"));
+
+        // Token expiry info
+        if (authorizedClient != null && authorizedClient.getAccessToken() != null) {
+            Instant expiresAt = authorizedClient.getAccessToken().getExpiresAt();
+            if (expiresAt != null) {
+                long secondsLeft = expiresAt.getEpochSecond() - Instant.now().getEpochSecond();
+                model.addAttribute("tokenExpiresAt", FMT.format(expiresAt));
+                model.addAttribute("tokenSecondsLeft", secondsLeft);
+                model.addAttribute("tokenExpired", secondsLeft <= 0);
+            }
+        }
+
+        // Refresh token present?
+        boolean hasRefreshToken = authorizedClient != null
+            && authorizedClient.getRefreshToken() != null;
+        model.addAttribute("hasRefreshToken", hasRefreshToken);
+
         return "dashboard";
     }
 

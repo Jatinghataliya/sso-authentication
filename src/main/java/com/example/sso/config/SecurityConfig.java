@@ -1,21 +1,32 @@
 package com.example.sso.config;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.util.Set;
 
 @Configuration
@@ -23,29 +34,67 @@ import java.util.Set;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final ClientRegistrationRepository clientRegistrationRepository;
+    @Value("${spring.security.oauth2.client.provider.okta.issuer-uri}")
+    private String issuerUri;
 
-    public SecurityConfig(ClientRegistrationRepository clientRegistrationRepository) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
+    /**
+     * OAuth2AuthorizedClientManager with refresh_token support.
+     * This is the core bean that TokenRefreshFilter uses to silently renew tokens.
+     */
+    @Bean
+    public OAuth2AuthorizedClientManager authorizedClientManager(
+            ClientRegistrationRepository clientRegistrationRepository,
+            OAuth2AuthorizedClientRepository authorizedClientRepository) {
+
+        // Support authorization_code (initial login) + refresh_token (silent renewal)
+        OAuth2AuthorizedClientProvider authorizedClientProvider =
+            OAuth2AuthorizedClientProviderBuilder.builder()
+                .authorizationCode()
+                .refreshToken()
+                .build();
+
+        DefaultOAuth2AuthorizedClientManager manager =
+            new DefaultOAuth2AuthorizedClientManager(
+                clientRegistrationRepository, authorizedClientRepository);
+        manager.setAuthorizedClientProvider(authorizedClientProvider);
+        return manager;
     }
 
     /**
-     * Handles logout at both Spring Security AND Auth0 level.
-     * After local session is cleared, redirects to Auth0's /v2/logout endpoint
-     * which then returns the user to our home page.
+     * TokenRefreshFilter bean — wired with the authorized client manager.
+     */
+    @Bean
+    public TokenRefreshFilter tokenRefreshFilter(OAuth2AuthorizedClientManager authorizedClientManager) {
+        return new TokenRefreshFilter(authorizedClientManager);
+    }
+
+    /**
+     * Auth0-specific logout handler.
+     * Builds: https://<domain>/v2/logout?client_id=...&returnTo=http://localhost:8081/
      */
     @Bean
     public LogoutSuccessHandler oidcLogoutSuccessHandler() {
-        OidcClientInitiatedLogoutSuccessHandler handler =
-            new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        // After Auth0 logs out, redirect back to our home page
-        handler.setPostLogoutRedirectUri("{baseUrl}/");
-        return handler;
+        return new LogoutSuccessHandler() {
+            @Override
+            public void onLogoutSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
+                String clientId = System.getenv("AUTH0_CLIENT_ID");
+                String returnTo  = "http://localhost:8081/";
+
+                String logoutUrl = UriComponentsBuilder
+                    .fromHttpUrl(issuerUri + "v2/logout")
+                    .queryParam("client_id", clientId)
+                    .queryParam("returnTo", returnTo)
+                    .toUriString();
+
+                response.sendRedirect(logoutUrl);
+            }
+        };
     }
 
     /**
-     * Custom OidcUserService that enriches the authenticated user with roles
-     * extracted from the Auth0 JWT claims via Auth0RolesExtractor.
+     * Custom OidcUserService — enriches user with roles from Auth0 JWT claims.
      */
     @Bean
     public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
@@ -58,7 +107,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   TokenRefreshFilter tokenRefreshFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/public/**", "/css/**", "/js/**", "/access-denied").permitAll()
@@ -81,11 +131,14 @@ public class SecurityConfig {
             )
 
             .logout(logout -> logout
-                .logoutSuccessHandler(oidcLogoutSuccessHandler())  // ← Auth0 single logout
+                .logoutSuccessHandler(oidcLogoutSuccessHandler())
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
                 .deleteCookies("JSESSIONID")
-            );
+            )
+
+            // Register the token refresh filter before the auth filter
+            .addFilterBefore(tokenRefreshFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

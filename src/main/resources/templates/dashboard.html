@@ -137,6 +137,39 @@
         </table>
     </div>
 
+    <!-- Token / Session Info -->
+    <div class="card">
+        <h3>Session & Token</h3>
+        <table>
+            <tr>
+                <td>Access Token</td>
+                <td>
+                    <span th:if="${tokenExpired != null and tokenExpired}" style="color:#d1242f; font-weight:600;">⚠ Expired</span>
+                    <span th:if="${tokenExpired != null and !tokenExpired}" style="color:#22c55e; font-weight:600;">✅ Valid</span>
+                    <span th:if="${tokenExpiresAt == null}" style="color:#9ca3af;">—</span>
+                </td>
+            </tr>
+            <tr th:if="${tokenExpiresAt != null}">
+                <td>Expires At</td>
+                <td th:text="${tokenExpiresAt}">—</td>
+            </tr>
+            <tr th:if="${tokenSecondsLeft != null}">
+                <td>Expires In</td>
+                <td>
+                    <span th:text="${tokenSecondsLeft + 's'}"
+                          th:style="${tokenSecondsLeft < 60} ? 'color:#f97316; font-weight:600;' : 'color:#22c55e;'">—</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Refresh Token</td>
+                <td>
+                    <span th:if="${hasRefreshToken}" style="color:#22c55e; font-weight:600;">✅ Present (auto-renew enabled)</span>
+                    <span th:if="${!hasRefreshToken}" style="color:#9ca3af;">Not available — add <code>offline_access</code> scope</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
     <!-- Actions -->
     <div>
         <a class="btn btn-secondary" th:href="@{/api/me}">View /api/me JSON</a>

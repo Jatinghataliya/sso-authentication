@@ -16,6 +16,7 @@ spring:
               - openid
               - profile
               - email
+              - offline_access
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/okta"
         provider:
