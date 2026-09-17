@@ -15,19 +15,33 @@
         main { max-width: 760px; margin: 40px auto; padding: 0 24px; }
         .welcome { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 28px 32px; margin-bottom: 24px; }
         .welcome h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-        .welcome p { color: #57606a; font-size: 14px; }
+        .welcome p { color: #57606a; font-size: 14px; margin-top: 6px; }
         .avatar { width: 52px; height: 52px; background: #3b82d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 16px; }
         .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px 32px; margin-bottom: 24px; }
-        .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         td { padding: 8px 0; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
         td:first-child { font-weight: 600; width: 160px; color: #57606a; }
-        td:last-child { word-break: break-all; color: #1f2328; }
-        .token-box { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; word-break: break-all; color: #57606a; margin-top: 8px; }
-        .badge-role { display: inline-block; background: #e8f0fe; color: #3b82d4; border-radius: 4px; padding: 2px 10px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+        td:last-child { word-break: break-all; }
+        /* Role badges */
+        .roles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .role-admin  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .role-user   { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .role-other  { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        /* Access cards */
+        .access-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .access-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px 24px; }
+        .access-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .access-card p { font-size: 13px; color: #57606a; margin-bottom: 12px; }
+        .access-card a { font-size: 13px; font-weight: 600; text-decoration: none; padding: 6px 14px; border-radius: 5px; display: inline-block; }
+        .access-allowed { border-left: 3px solid #22c55e; }
+        .access-denied-card { border-left: 3px solid #ef4444; opacity: 0.6; }
+        .btn-go { background: #1f2328; color: #fff; }
+        .btn-go:hover { background: #3b82d4; }
+        .btn-locked { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
         .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; }
         .btn-danger { background: #fff; color: #d1242f; border: 1px solid #d1242f; }
-        .btn-danger:hover { background: #d1242f; color: #fff; }
         .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; margin-right: 10px; }
     </style>
 </head>
@@ -38,7 +52,10 @@
     <nav>
         <a th:href="@{/}">Home</a>
         <a th:href="@{/dashboard}">Dashboard</a>
-        <sec:authorize access="hasAuthority('ROLE_ADMIN')">
+        <sec:authorize access="hasRole('USER')">
+            <a th:href="@{/user/profile}">My Profile</a>
+        </sec:authorize>
+        <sec:authorize access="hasRole('ADMIN')">
             <a th:href="@{/admin}">Admin</a>
         </sec:authorize>
         <a th:href="@{/logout}">Logout</a>
@@ -50,35 +67,68 @@
     <div class="welcome">
         <div class="avatar" th:text="${name != null ? name.substring(0,1).toUpperCase() : 'U'}">U</div>
         <h2>Welcome, <span th:text="${name}">User</span>!</h2>
-        <p>You are authenticated via <strong>Okta SSO</strong> using OpenID Connect.</p>
+        <p>Authenticated via <strong>Auth0 SSO</strong> (OpenID Connect)</p>
+        <!-- Roles -->
+        <div class="roles" th:if="${!roles.isEmpty()}">
+            <span th:each="role : ${roles}"
+                  th:text="${role}"
+                  th:classappend="${role == 'ADMIN'} ? 'role-admin' : (${role == 'USER'} ? 'role-user' : 'role-other')"
+                  class="role-badge">ROLE</span>
+        </div>
+        <p th:if="${roles.isEmpty()}" style="color:#ef4444; margin-top:10px; font-size:13px;">
+            ⚠ No roles assigned. Ask your admin to assign roles in Auth0.
+        </p>
+    </div>
+
+    <!-- Role-Based Access Cards -->
+    <div class="access-grid">
+        <!-- User Section -->
+        <div th:classappend="${#authorization.expression('hasRole(''USER'')')} ? 'access-allowed' : 'access-denied-card'" class="access-card">
+            <h4>👤 User Area</h4>
+            <p>Access your personal profile. Requires <strong>USER</strong> role.</p>
+            <sec:authorize access="hasRole('USER')">
+                <a class="btn-go" th:href="@{/user/profile}">Go →</a>
+            </sec:authorize>
+            <sec:authorize access="!hasRole('USER')">
+                <span class="btn-locked">🔒 No Access</span>
+            </sec:authorize>
+        </div>
+
+        <!-- Admin Section -->
+        <div th:classappend="${#authorization.expression('hasRole(''ADMIN'')')} ? 'access-allowed' : 'access-denied-card'" class="access-card">
+            <h4>🛡️ Admin Panel</h4>
+            <p>Manage users and settings. Requires <strong>ADMIN</strong> role.</p>
+            <sec:authorize access="hasRole('ADMIN')">
+                <a class="btn-go" th:href="@{/admin}">Go →</a>
+            </sec:authorize>
+            <sec:authorize access="!hasRole('ADMIN')">
+                <span class="btn-locked">🔒 No Access</span>
+            </sec:authorize>
+        </div>
     </div>
 
     <!-- Profile Info -->
     <div class="card">
         <h3>Profile</h3>
         <table>
-            <tr>
-                <td>Full Name</td>
-                <td th:text="${name}">—</td>
-            </tr>
-            <tr>
-                <td>Email</td>
-                <td th:text="${email}">—</td>
-            </tr>
-            <tr>
-                <td>Subject (Okta ID)</td>
-                <td th:text="${subject}">—</td>
-            </tr>
-            <tr>
-                <td>Locale</td>
-                <td th:text="${locale}">—</td>
+            <tr><td>Full Name</td><td th:text="${name}">—</td></tr>
+            <tr><td>Email</td><td th:text="${email}">—</td></tr>
+            <tr><td>Subject (ID)</td><td th:text="${subject}">—</td></tr>
+            <tr><td>Roles</td>
+                <td>
+                    <span th:each="role : ${roles}"
+                          th:text="${role}"
+                          th:classappend="${role == 'ADMIN'} ? 'role-admin' : (${role == 'USER'} ? 'role-user' : 'role-other')"
+                          class="role-badge" style="margin-right:4px;">ROLE</span>
+                    <span th:if="${roles.isEmpty()}" style="color:#9ca3af;">None</span>
+                </td>
             </tr>
         </table>
     </div>
 
     <!-- JWT Claims -->
     <div class="card">
-        <h3>JWT Claims (from ID Token)</h3>
+        <h3>JWT Claims</h3>
         <table>
             <tr th:each="entry : ${claims}">
                 <td th:text="${entry.key}">key</td>

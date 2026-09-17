@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>Admin — SSO Demo</title>
+    <title>Admin Panel — SSO Demo</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, "Segoe UI", sans-serif; background: #f7f8fa; color: #1f2328; }
@@ -10,13 +10,24 @@
         header h1 { font-size: 18px; font-weight: 600; }
         header nav a { color: #ccc; text-decoration: none; margin-left: 16px; font-size: 14px; }
         header nav a:hover { color: #fff; }
-        main { max-width: 760px; margin: 60px auto; padding: 0 24px; text-align: center; }
-        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 40px; }
-        .icon { font-size: 48px; margin-bottom: 16px; }
-        h2 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
-        p { color: #57606a; font-size: 15px; line-height: 1.6; }
-        .badge { display: inline-block; background: #fff3cd; color: #856404; border: 1px solid #ffc107; border-radius: 4px; padding: 4px 12px; font-size: 13px; font-weight: 600; margin-top: 16px; }
-        .btn { display: inline-block; margin-top: 24px; padding: 10px 24px; background: #1f2328; color: #fff; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; }
+        main { max-width: 760px; margin: 40px auto; padding: 0 24px; }
+        .banner { background: #1f2328; color: #fff; border-radius: 8px; padding: 32px; margin-bottom: 24px; }
+        .banner h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .banner p { color: #9ca3af; font-size: 14px; }
+        .badge { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 700; margin-top: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; }
+        .card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .card p { font-size: 13px; color: #57606a; }
+        .card .num { font-size: 28px; font-weight: 700; color: #3b82d4; margin: 8px 0; }
+        .info-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px 32px; margin-bottom: 24px; }
+        .info-card h3 { font-size: 13px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        td { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        td:first-child { font-weight: 600; width: 140px; color: #57606a; }
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; margin-right: 10px; }
+        .btn-danger { background: #fff; color: #d1242f; border: 1px solid #d1242f; }
     </style>
 </head>
 <body>
@@ -26,19 +37,56 @@
     <nav>
         <a th:href="@{/}">Home</a>
         <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/admin}">Admin</a>
         <a th:href="@{/logout}">Logout</a>
     </nav>
 </header>
 
 <main>
-    <div class="card">
-        <div class="icon">🛡️</div>
-        <h2>Admin Panel</h2>
-        <p>Welcome, <strong th:text="${name}">Admin</strong>.<br/>
-           You have accessed this page because your Okta account has the <strong>ADMIN</strong> role assigned.</p>
+    <!-- Banner -->
+    <div class="banner">
+        <h2>🛡️ Admin Panel</h2>
+        <p>You have elevated privileges. Logged in as <strong th:text="${name}">Admin</strong> (<span th:text="${email}">—</span>)</p>
         <span class="badge">ROLE_ADMIN</span>
-        <br/>
-        <a class="btn" th:href="@{/dashboard}">← Back to Dashboard</a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid">
+        <div class="card">
+            <h4>Auth Provider</h4>
+            <div class="num">Auth0</div>
+            <p>OpenID Connect (OIDC)</p>
+        </div>
+        <div class="card">
+            <h4>Access Level</h4>
+            <div class="num">Admin</div>
+            <p>Full access to all resources</p>
+        </div>
+        <div class="card">
+            <h4>Session</h4>
+            <div class="num">Active</div>
+            <p>Authenticated via SSO token</p>
+        </div>
+        <div class="card">
+            <h4>Token Type</h4>
+            <div class="num">JWT</div>
+            <p>ID Token + Access Token</p>
+        </div>
+    </div>
+
+    <!-- Admin Info -->
+    <div class="info-card">
+        <h3>Admin Account</h3>
+        <table>
+            <tr><td>Name</td><td th:text="${name}">—</td></tr>
+            <tr><td>Email</td><td th:text="${email}">—</td></tr>
+            <tr><td>Role</td><td><strong>ADMIN</strong></td></tr>
+        </table>
+    </div>
+
+    <div>
+        <a class="btn btn-secondary" th:href="@{/dashboard}">← Dashboard</a>
+        <a class="btn btn-danger" th:href="@{/logout}">Logout</a>
     </div>
 </main>
 
