@@ -69,6 +69,29 @@ spring:
   thymeleaf:
     cache: false
 
+# ── Spring Boot Actuator ─────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized   # full details only for authenticated users
+      show-components: when-authorized
+  info:
+    env:
+      enabled: true
+
+# App info shown at /actuator/info
+info:
+  app:
+    name: SSO Demo
+    description: Spring Boot Multi-Provider SSO (Auth0, GitHub, Google)
+    version: 1.0.0
+    java-version: ${java.version}
+
 # App-level config (used in logout redirect, etc.)
 app:
   base-url: ${APP_BASE_URL:http://localhost:8081}

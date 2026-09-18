@@ -169,7 +169,9 @@ public class SecurityConfig {
                 .requestMatchers("/", "/public/**", "/css/**", "/js/**",
                     "/access-denied", "/login",
                     "/oauth2/authorization/**",           // OAuth2 initiation — must be public
-                    "/h2-console/**"                      // H2 web console (dev only)
+                    "/h2-console/**",                     // H2 web console (dev only)
+                    "/actuator/health",                   // Railway health probe — must be public
+                    "/actuator/info"                      // App info — public
                 ).permitAll()
                 // Role-protected pages
                 .requestMatchers("/admin/**").hasRole("ADMIN")

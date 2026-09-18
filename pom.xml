@@ -60,6 +60,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Actuator — health check, info, metrics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- JPA / Database -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
