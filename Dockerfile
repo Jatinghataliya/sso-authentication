@@ -39,16 +39,8 @@ COPY --from=build /app/target/sso-okta-*.jar app.jar
 # Port the app listens on (matches server.port / SERVER_PORT default)
 EXPOSE 8081
 
-# Pass all credentials via environment variables at runtime.
-# Do NOT bake secrets into the image.
-# See README.md → Local Configuration → Option B for the full list.
-ENV AUTH0_CLIENT_ID=""
-ENV AUTH0_CLIENT_SECRET=""
-ENV AUTH0_DOMAIN=""
-ENV GITHUB_CLIENT_ID=""
-ENV GITHUB_CLIENT_SECRET=""
-ENV GOOGLE_CLIENT_ID=""
-ENV GOOGLE_CLIENT_SECRET=""
+# Credentials are injected at runtime by Railway (or via docker run -e / .env).
+# Do NOT bake secrets into the image — only set non-secret defaults here.
 ENV APP_BASE_URL="http://localhost:8081"
 ENV SERVER_PORT="8081"
 
