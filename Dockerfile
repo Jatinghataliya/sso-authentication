@@ -36,11 +36,13 @@ WORKDIR /app
 # Copy only the fat JAR from the build stage
 COPY --from=build /app/target/sso-okta-*.jar app.jar
 
-# Port the app listens on (matches server.port / SERVER_PORT default)
+# Tell Railway (and Docker) which port this container listens on.
+# Railway reads EXPOSE to configure its healthcheck probe port.
 EXPOSE 8081
 
-# Credentials and PORT are injected at runtime by Railway.
-# Do NOT bake secrets or PORT into the image.
+# Set PORT explicitly so Spring's ${PORT:8081} resolves correctly
+# even when Railway doesn't inject it automatically.
+ENV PORT="8081"
 ENV APP_BASE_URL="http://localhost:8081"
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
