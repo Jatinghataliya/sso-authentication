@@ -119,9 +119,53 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ## Local Configuration
 
-Create `src/main/resources/application-local.yml` (this file is gitignored):
+### Required Properties
+
+All credentials are read from environment variables defined in `application.yml`.
+For local development, set them in `application-local.yml` (gitignored) **or** as OS environment variables.
+
+#### Auth0
+
+| Property | Env Var | Where to find it |
+|---|---|---|
+| `client-id` | `AUTH0_CLIENT_ID` | Auth0 Dashboard → Applications → your app → **Client ID** |
+| `client-secret` | `AUTH0_CLIENT_SECRET` | Auth0 Dashboard → Applications → your app → **Client Secret** |
+| `issuer-uri` | `AUTH0_DOMAIN` | Auth0 Dashboard → Applications → your app → **Domain** (e.g. `my-testing-domain.us.auth0.com`) |
+
+#### GitHub
+
+| Property | Env Var | Where to find it |
+|---|---|---|
+| `client-id` | `GITHUB_CLIENT_ID` | GitHub → Settings → Developer Settings → OAuth Apps → your app → **Client ID** |
+| `client-secret` | `GITHUB_CLIENT_SECRET` | GitHub → Settings → Developer Settings → OAuth Apps → your app → **Client Secret** |
+
+#### Google
+
+| Property | Env Var | Where to find it |
+|---|---|---|
+| `client-id` | `GOOGLE_CLIENT_ID` | Google Cloud Console → APIs & Services → Credentials → your OAuth client → **Client ID** |
+| `client-secret` | `GOOGLE_CLIENT_SECRET` | Google Cloud Console → APIs & Services → Credentials → your OAuth client → **Client Secret** |
+
+#### App (optional)
+
+| Property | Env Var | Default | Description |
+|---|---|---|---|
+| `app.base-url` | `APP_BASE_URL` | `http://localhost:8081` | Base URL used in Auth0 logout `returnTo` redirect |
+| `server.port` | `SERVER_PORT` | `8081` | HTTP port the server listens on |
+
+---
+
+### Option A — `application-local.yml` (recommended for local dev)
+
+Create `src/main/resources/application-local.yml` — this file is **gitignored**, safe to store real values:
 
 ```yaml
+server:
+  port: 8081
+
+app:
+  base-url: http://localhost:8081
+
 spring:
   security:
     oauth2:
@@ -141,7 +185,38 @@ spring:
             issuer-uri: https://YOUR_AUTH0_DOMAIN/
 ```
 
-> **Do not commit this file.** It is listed in `.gitignore`.
+Run with:
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+### Option B — Environment variables (CI/CD, Docker, production)
+
+Set these before running the app:
+
+```powershell
+# PowerShell
+$env:AUTH0_CLIENT_ID     = "your-auth0-client-id"
+$env:AUTH0_CLIENT_SECRET = "your-auth0-client-secret"
+$env:AUTH0_DOMAIN        = "your-tenant.us.auth0.com"
+$env:GITHUB_CLIENT_ID    = "your-github-client-id"
+$env:GITHUB_CLIENT_SECRET= "your-github-client-secret"
+$env:GOOGLE_CLIENT_ID    = "your-google-client-id"
+$env:GOOGLE_CLIENT_SECRET= "your-google-client-secret"
+```
+
+```bash
+# bash / Linux / macOS
+export AUTH0_CLIENT_ID=your-auth0-client-id
+export AUTH0_CLIENT_SECRET=your-auth0-client-secret
+export AUTH0_DOMAIN=your-tenant.us.auth0.com
+export GITHUB_CLIENT_ID=your-github-client-id
+export GITHUB_CLIENT_SECRET=your-github-client-secret
+export GOOGLE_CLIENT_ID=your-google-client-id
+export GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+> **Never commit real credentials.** `.env`, `*.env`, and `application-local.yml` are all listed in `.gitignore`.
 
 ---
 
