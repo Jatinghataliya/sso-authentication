@@ -1,5 +1,6 @@
 package com.example.sso.config;
 
+import com.example.sso.service.AuditService;
 import com.example.sso.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,9 +50,11 @@ public class SecurityConfig {
     private String appBaseUrl;
 
     private final UserService userService;
+    private final AuditService auditService;
 
-    public SecurityConfig(@Lazy UserService userService) {
+    public SecurityConfig(@Lazy UserService userService, @Lazy AuditService auditService) {
         this.userService = userService;
+        this.auditService = auditService;
     }
 
     /**
@@ -93,6 +96,11 @@ public class SecurityConfig {
         return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
             if (authentication instanceof OAuth2AuthenticationToken token) {
                 userService.upsertUser(token);
+                // Resolve email for audit log
+                String email = resolveEmail(token);
+                String provider = token.getAuthorizedClientRegistrationId();
+                String ip = getClientIp(request);
+                auditService.recordLogin(email, provider, ip);
             }
             response.sendRedirect(request.getContextPath() + "/dashboard");
         };
@@ -114,6 +122,8 @@ public class SecurityConfig {
                 String provider = "";
                 if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
                     provider = oauthToken.getAuthorizedClientRegistrationId();
+                    String email = resolveEmail(oauthToken);
+                    auditService.recordLogout(email, provider, getClientIp(request));
                 }
 
                 if ("okta".equals(provider)) {
@@ -233,5 +243,30 @@ public class SecurityConfig {
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
+    }
+
+    // ── Audit helpers ─────────────────────────────────────────────────────────
+
+    /** Extracts the best available email from an OAuth2 token for audit logging. */
+    private String resolveEmail(OAuth2AuthenticationToken token) {
+        java.util.Map<String, Object> attrs = token.getPrincipal().getAttributes();
+        // GitHub may have no public email — fall back to login@github.com
+        if ("github".equals(token.getAuthorizedClientRegistrationId())) {
+            Object emailObj = attrs.get("email");
+            String login = (String) attrs.getOrDefault("login", "unknown");
+            return (emailObj != null && !emailObj.toString().isBlank())
+                    ? emailObj.toString()
+                    : login + "@github.com";
+        }
+        return (String) attrs.getOrDefault("email", "unknown");
+    }
+
+    /** Returns the real client IP, respecting X-Forwarded-For from Railway's proxy. */
+    private String getClientIp(jakarta.servlet.http.HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

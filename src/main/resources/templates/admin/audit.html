@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Audit Log — SSO Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", sans-serif; background: #f7f8fa; color: #1f2328; }
+        header { background: #1f2328; color: #fff; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 18px; font-weight: 600; }
+        header nav a { color: #ccc; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        header nav a:hover { color: #fff; }
+        main { max-width: 1024px; margin: 40px auto; padding: 0 24px; }
+        .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
+        /* Filter bar */
+        .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; align-items: center; }
+        .filter-bar form { display: flex; gap: 8px; align-items: center; }
+        .filter-bar input[type=text] {
+            padding: 7px 12px; border: 1px solid #e5e7eb; border-radius: 6px;
+            font-size: 13px; width: 220px; color: #1f2328;
+        }
+        .filter-bar input[type=text]:focus { outline: 2px solid #3b82d4; border-color: transparent; }
+        .filter-bar button, .filter-bar a {
+            padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+            cursor: pointer; text-decoration: none; display: inline-block;
+        }
+        .btn-primary { background: #3b82d4; color: #fff; border: none; }
+        .btn-primary:hover { background: #2563b0; }
+        .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; }
+        .btn-secondary:hover { background: #f0f1f3; }
+        .filter-tag { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; border-radius: 12px; padding: 3px 12px; font-size: 12px; font-weight: 600; }
+
+        /* Event type filter buttons */
+        .type-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+        .type-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; border: 1px solid; }
+        .type-btn.all     { background: #1f2328; color: #fff; border-color: #1f2328; }
+        .type-btn.login   { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+        .type-btn.logout  { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .type-btn.role    { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+        .type-btn.delete  { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+        /* Table */
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+        .card-header { padding: 14px 24px; border-bottom: 1px solid #e5e7eb; font-size: 13px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
+        .card-header span { font-size: 12px; color: #57606a; font-weight: 500; text-transform: none; letter-spacing: 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { padding: 9px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e5e7eb; background: #f7f8fa; }
+        td { padding: 11px 16px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge-login   { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .badge-logout  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-role    { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+        .badge-delete  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .badge-okta    { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+        .badge-github  { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+        .badge-google  { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+        .ip-text { font-family: monospace; font-size: 12px; color: #57606a; }
+        .details-text { font-size: 12px; color: #57606a; font-style: italic; }
+        .empty-state { padding: 48px 24px; text-align: center; color: #57606a; font-size: 14px; }
+
+        .active-filter { background: #eff6ff; border-left: 3px solid #3b82d4; padding: 10px 16px; font-size: 13px; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🔐 SSO Demo</h1>
+    <nav>
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/admin}">Admin</a>
+        <a th:href="@{/admin/users}">Users</a>
+        <a th:href="@{/admin/audit}" style="color:#fff;">Audit Log</a>
+        <a th:href="@{/logout}">Logout</a>
+    </nav>
+</header>
+
+<main>
+    <div class="page-title">📋 Audit Log</div>
+
+    <!-- Active filter indicator -->
+    <div th:if="${typeFilter != null}" class="active-filter">
+        Filtered by event type: <strong th:text="${typeFilter}">LOGIN</strong>
+        &nbsp;·&nbsp; <a th:href="@{/admin/audit}">Clear filter</a>
+    </div>
+    <div th:if="${userFilter != null}" class="active-filter">
+        Filtered by user: <strong th:text="${userFilter}">user@example.com</strong>
+        &nbsp;·&nbsp; <a th:href="@{/admin/audit}">Clear filter</a>
+    </div>
+
+    <!-- Event type quick-filter links -->
+    <div class="type-filters">
+        <a class="type-btn all"    th:href="@{/admin/audit}">All Events</a>
+        <a class="type-btn login"  th:href="@{/admin/audit(filter='LOGIN')}">LOGIN</a>
+        <a class="type-btn logout" th:href="@{/admin/audit(filter='LOGOUT')}">LOGOUT</a>
+        <a class="type-btn role"   th:href="@{/admin/audit(filter='ROLE_CHANGE')}">ROLE CHANGE</a>
+        <a class="type-btn delete" th:href="@{/admin/audit(filter='USER_DELETE')}">USER DELETE</a>
+    </div>
+
+    <!-- User search filter -->
+    <div class="filter-bar">
+        <form th:action="@{/admin/audit}" method="get">
+            <input type="text" name="user" placeholder="Filter by user email…"
+                   th:value="${userFilter}"/>
+            <button type="submit" class="btn-primary">Search</button>
+        </form>
+        <a class="btn-secondary" th:href="@{/admin/audit}">Reset</a>
+        <span th:if="${events.size() > 0}" style="font-size:13px;color:#57606a;">
+            Showing <strong th:text="${totalEvents}">0</strong> event(s)
+        </span>
+    </div>
+
+    <!-- Audit table -->
+    <div class="card">
+        <div class="card-header">
+            Audit Events
+            <span th:text="'Total: ' + ${totalEvents}">Total: 0</span>
+        </div>
+
+        <div th:if="${events.isEmpty()}" class="empty-state">
+            No audit events found. Events are recorded on login, logout, role changes, and deletions.
+        </div>
+
+        <table th:if="${!events.isEmpty()}">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Event</th>
+                    <th>User</th>
+                    <th>Provider</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="event, iter : ${events}">
+                    <td style="color:#57606a;font-size:12px;" th:text="${iter.count}">1</td>
+                    <td style="white-space:nowrap;"
+                        th:text="${#temporals.format(event.occurredAt, 'dd MMM yyyy HH:mm:ss')}">—</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${event.eventType == 'LOGIN'}    ? ' badge-login'  :
+                                             (${event.eventType == 'LOGOUT'}   ? ' badge-logout' :
+                                             (${event.eventType == 'ROLE_CHANGE'} ? ' badge-role' : ' badge-delete'))"
+                              th:text="${event.eventType}">LOGIN</span>
+                    </td>
+                    <td th:text="${event.userEmail}">—</td>
+                    <td>
+                        <span th:if="${event.provider != null}" class="badge"
+                              th:classappend="${event.provider == 'okta'}   ? ' badge-okta'   :
+                                             (${event.provider == 'github'} ? ' badge-github' : ' badge-google')"
+                              th:text="${event.provider == 'okta'} ? 'Auth0' : (${event.provider == 'github'} ? 'GitHub' : 'Google')">—</span>
+                        <span th:if="${event.provider == null}" style="color:#ccc;">—</span>
+                    </td>
+                    <td class="details-text" th:text="${event.details != null} ? ${event.details} : '—'">—</td>
+                    <td class="ip-text" th:text="${event.ipAddress != null} ? ${event.ipAddress} : '—'">—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <a class="btn-secondary" th:href="@{/admin}" style="display:inline-block;padding:8px 18px;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;color:#1f2328;border:1px solid #e5e7eb;">
+        ← Back to Admin
+    </a>
+</main>
+
+</body>
+</html>
