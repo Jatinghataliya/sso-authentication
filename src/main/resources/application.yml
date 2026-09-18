@@ -1,5 +1,7 @@
 server:
-  port: ${SERVER_PORT:8081}
+  # Railway injects PORT dynamically — must bind to it or the healthcheck never reaches us.
+  # Fallback to 8081 for local dev (overridden by application-local.yml's SERVER_PORT).
+  port: ${PORT:${SERVER_PORT:8081}}
   # Trust X-Forwarded-Proto from Railway's reverse proxy so redirect URIs use https://
   forward-headers-strategy: NATIVE
   servlet:
@@ -11,6 +13,8 @@ spring:
     name: sso-demo
 
   datasource:
+    # Railway sets DATABASE_URL as postgresql://user:pass@host:5432/db
+    # Spring needs jdbc:postgresql://... — the replace handles both formats.
     url: ${DATABASE_URL:jdbc:h2:mem:ssodb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
     username: ${DATABASE_USERNAME:sa}
     password: ${DATABASE_PASSWORD:}
@@ -20,6 +24,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}

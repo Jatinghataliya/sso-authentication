@@ -39,9 +39,8 @@ COPY --from=build /app/target/sso-okta-*.jar app.jar
 # Port the app listens on (matches server.port / SERVER_PORT default)
 EXPOSE 8081
 
-# Credentials are injected at runtime by Railway (or via docker run -e / .env).
-# Do NOT bake secrets into the image — only set non-secret defaults here.
+# Credentials and PORT are injected at runtime by Railway.
+# Do NOT bake secrets or PORT into the image.
 ENV APP_BASE_URL="http://localhost:8081"
-ENV SERVER_PORT="8081"
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
