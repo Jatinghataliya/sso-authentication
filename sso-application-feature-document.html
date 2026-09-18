@@ -1,0 +1,358 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SSO Application — Feature Document</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.6; background: #ffffff; color: #1f2328; }
+  .page { max-width: 760px; margin: 0 auto; padding: 48px 32px 64px; }
+
+  /* Header */
+  .doc-header { border-bottom: 2px solid #1f2328; padding-bottom: 24px; margin-bottom: 36px; }
+  .doc-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .doc-header .subtitle { color: #57606a; font-size: 13px; }
+  .meta-row { display: flex; gap: 24px; margin-top: 14px; flex-wrap: wrap; }
+  .meta-item { font-size: 12px; color: #57606a; }
+  .meta-item strong { color: #1f2328; }
+
+  /* Section */
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 16px; font-weight: 700; border-left: 3px solid #3b82d4; padding-left: 10px; margin-bottom: 16px; color: #1f2328; }
+  .section-desc { color: #57606a; font-size: 13px; margin-bottom: 16px; line-height: 1.7; }
+
+  /* Feature cards grid */
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feature-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; background: #f7f8fa; }
+  .feature-card .feature-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .feature-card .feature-desc { font-size: 12px; color: #57606a; line-height: 1.5; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+  .badge-done { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .badge-auth0 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-github { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+  .badge-google { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+  th { background: #f7f8fa; font-weight: 600; text-align: left; padding: 8px 12px; border: 1px solid #e5e7eb; color: #57606a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 8px 12px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f8fa; }
+  code { background: #f0f0f0; border: 1px solid #e5e7eb; border-radius: 3px; padding: 1px 5px; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 11px; color: #d1242f; }
+
+  /* Flow diagram */
+  .flow { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px 24px; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 12px; line-height: 1.8; color: #1f2328; margin-bottom: 8px; }
+  .flow .arrow { color: #3b82d4; }
+  .flow .label { color: #57606a; }
+
+  /* Pill tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag { font-size: 11px; padding: 3px 9px; border-radius: 12px; font-weight: 500; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+  .tag-green { background: #dcfce7; color: #166534; }
+  .tag-purple { background: #ede9fe; color: #5b21b6; }
+  .tag-gray { background: #f3f4f6; color: #374151; }
+
+  /* Status legend */
+  .legend { display: flex; gap: 16px; font-size: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-green { background: #22c55e; }
+  .dot-blue { background: #3b82d4; }
+  .dot-gray { background: #9ca3af; }
+
+  /* Provider section */
+  .provider-row { display: grid; grid-template-columns: 140px 1fr; gap: 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 12px; }
+  .provider-label { background: #1f2328; color: #fff; padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; }
+  .provider-label .pname { font-weight: 700; font-size: 13px; }
+  .provider-label .ptype { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  .provider-detail { padding: 14px 16px; background: #f7f8fa; font-size: 12px; color: #57606a; }
+  .provider-detail ul { padding-left: 16px; }
+  .provider-detail li { margin-bottom: 3px; }
+
+  /* CI/CD pipeline */
+  .pipeline { display: flex; align-items: center; gap: 0; margin: 16px 0; flex-wrap: wrap; }
+  .pipe-step { background: #1f2328; color: #fff; padding: 8px 14px; border-radius: 5px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pipe-arrow { color: #3b82d4; font-size: 18px; font-weight: 700; padding: 0 8px; }
+
+  /* Footer */
+  .doc-footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="doc-header">
+    <h1>SSO Application — Feature Document</h1>
+    <div class="subtitle">Spring Boot 3.2 · Multi-Provider Single Sign-On · Deployed on Railway</div>
+    <div class="meta-row">
+      <div class="meta-item"><strong>Repository:</strong> Jatinghataliya/sso-authentication</div>
+      <div class="meta-item"><strong>Live URL:</strong> sso-authentication-production.up.railway.app</div>
+      <div class="meta-item"><strong>Stack:</strong> Java 17, Spring Boot 3.2, Spring Security 6</div>
+      <div class="meta-item"><strong>Version:</strong> 1.0.0</div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <div class="section-desc">
+      A production-ready Single Sign-On application supporting three identity providers — Auth0 (OIDC), GitHub (OAuth2), and Google (OIDC). Built with Spring Boot 3.2 and Spring Security 6, it implements role-based access control, silent token refresh, single logout, and a full CI/CD pipeline deploying automatically to Railway on every push to <code>main</code>.
+    </div>
+    <div class="tags">
+      <span class="tag tag-blue">Spring Boot 3.2</span>
+      <span class="tag tag-blue">Spring Security 6</span>
+      <span class="tag tag-green">OAuth2 / OIDC</span>
+      <span class="tag tag-green">RBAC</span>
+      <span class="tag tag-purple">Docker</span>
+      <span class="tag tag-purple">GitHub Actions CI/CD</span>
+      <span class="tag tag-gray">Railway</span>
+      <span class="tag tag-gray">Thymeleaf</span>
+      <span class="tag tag-gray">Java 17</span>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Identity Providers</div>
+    <div class="provider-row">
+      <div class="provider-label">
+        <div class="pname">Auth0</div>
+        <div class="ptype">OpenID Connect</div>
+      </div>
+      <div class="provider-detail">
+        <ul>
+          <li>Full OIDC login with ID token, access token, and refresh token</li>
+          <li>Custom roles injected via Auth0 Actions (<code>https://my-app.com/roles</code> claim)</li>
+          <li>Silent token refresh using <code>offline_access</code> scope</li>
+          <li>Single logout via <code>/v2/logout?client_id=...&amp;returnTo=...</code></li>
+          <li>Callback: <code>/login/oauth2/code/okta</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="provider-row">
+      <div class="provider-label">
+        <div class="pname">GitHub</div>
+        <div class="ptype">OAuth2</div>
+      </div>
+      <div class="provider-detail">
+        <ul>
+          <li>OAuth2 login with <code>read:user</code> and <code>user:email</code> scopes</li>
+          <li>Displays GitHub username, avatar, and profile link on dashboard</li>
+          <li>Token refresh skipped (GitHub tokens do not expire)</li>
+          <li>Local session logout only (no external logout endpoint)</li>
+          <li>Callback: <code>/login/oauth2/code/github</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="provider-row">
+      <div class="provider-label">
+        <div class="pname">Google</div>
+        <div class="ptype">OpenID Connect</div>
+      </div>
+      <div class="provider-detail">
+        <ul>
+          <li>OIDC login with <code>openid profile email</code> scopes</li>
+          <li>Displays profile picture, full name, and email on dashboard</li>
+          <li>Uses Spring Boot built-in Google provider (no manual config needed)</li>
+          <li>Token refresh skipped (no <code>offline_access</code> scope)</li>
+          <li>Callback: <code>/login/oauth2/code/google</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Implemented Features</div>
+    <div class="legend">
+      <div class="legend-item"><div class="dot dot-green"></div> Implemented &amp; live</div>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Multi-provider Login</div>
+        <div class="feature-desc">Home page with three styled login buttons — Auth0, GitHub, Google. Each initiates the correct OAuth2/OIDC flow.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Role-Based Access Control</div>
+        <div class="feature-desc">ADMIN and USER roles extracted from Auth0 JWT claim. Pages protected with <code>@PreAuthorize</code> and <code>hasRole()</code>.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Silent Token Refresh</div>
+        <div class="feature-desc"><code>TokenRefreshFilter</code> runs on every request. Proactively refreshes Auth0 access token 60s before expiry using refresh_token. GitHub and Google are skipped.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Single Logout</div>
+        <div class="feature-desc">Auth0 logout hits <code>/v2/logout</code> to clear Auth0 session. GitHub/Google do local session clear only. Session, cookies, and authentication all invalidated.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Auth Bypass Protection</div>
+        <div class="feature-desc">Unauthenticated access to any protected route redirects to home (<code>/</code>), not Spring's default <code>/login</code> page. Implemented via custom <code>authenticationEntryPoint</code>.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Dashboard</div>
+        <div class="feature-desc">Shows provider, profile info, assigned roles, token expiry countdown, refresh token status, and all JWT claims. Provider-specific UI (GitHub avatar, Google picture).</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Access Denied Page</div>
+        <div class="feature-desc">Custom 403 page shown when a user lacks the required role. Displays user name and instructions to contact admin.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> REST API Endpoint</div>
+        <div class="feature-desc"><code>GET /api/me</code> returns authenticated user info, provider, roles, and attributes as JSON. Useful for client-side or API integrations.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Secrets Management</div>
+        <div class="feature-desc">All credentials stored in environment variables. <code>application-local.yml</code> gitignored for local dev. No secrets in source code or Docker image.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> Docker Support</div>
+        <div class="feature-desc">Multi-stage Dockerfile — JDK build stage + JRE runtime stage. Non-root <code>appuser</code>. <code>docker-compose.yml</code> for local dev with <code>.env</code> file.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> HTTPS on Railway</div>
+        <div class="feature-desc"><code>forward-headers-strategy: NATIVE</code> configured so Spring Boot reads <code>X-Forwarded-Proto</code> from Railway's reverse proxy, generating correct <code>https://</code> redirect URIs.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-name"><span class="badge badge-done">✓ Done</span> CI/CD Pipeline</div>
+        <div class="feature-desc">GitHub Actions: build + test → Docker push to GHCR → Railway deploy. Triggered on every push to <code>main</code>. PRs run build only.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">API Endpoints</div>
+    <table>
+      <thead>
+        <tr><th>URL</th><th>Method</th><th>Access</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>GET</td><td>Public</td><td>Home page — login buttons for all 3 providers</td></tr>
+        <tr><td><code>/dashboard</code></td><td>GET</td><td>Authenticated</td><td>User profile, roles, token expiry, JWT claims</td></tr>
+        <tr><td><code>/api/me</code></td><td>GET</td><td>Authenticated</td><td>User info + roles + attributes as JSON</td></tr>
+        <tr><td><code>/user/profile</code></td><td>GET</td><td>ROLE_USER</td><td>User profile page</td></tr>
+        <tr><td><code>/admin</code></td><td>GET</td><td>ROLE_ADMIN</td><td>Admin panel</td></tr>
+        <tr><td><code>/access-denied</code></td><td>GET</td><td>Public</td><td>403 error page</td></tr>
+        <tr><td><code>/logout</code></td><td>GET/POST</td><td>Authenticated</td><td>Single logout — clears session + Auth0 session</td></tr>
+        <tr><td><code>/oauth2/authorization/{provider}</code></td><td>GET</td><td>Public</td><td>Initiates OAuth2 login (okta / github / google)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">How Role-Based Access Works</div>
+    <div class="flow">
+      <div>User logs in via Auth0</div>
+      <div class="arrow">↓</div>
+      <div>Auth0 Action: <span class="label">"Add Roles to Token"</span></div>
+      <div class="arrow">↓</div>
+      <div>ID Token claim: <span class="label">https://my-app.com/roles: ["admin", "user"]</span></div>
+      <div class="arrow">↓</div>
+      <div>Auth0RolesExtractor.extractAuthorities()</div>
+      <div class="arrow">↓</div>
+      <div>Spring Security: <span class="label">ROLE_ADMIN, ROLE_USER granted</span></div>
+      <div class="arrow">↓</div>
+      <div>@PreAuthorize("hasRole('ADMIN')") <span class="label">enforced on routes</span></div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Environment Variables</div>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Provider</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>AUTH0_CLIENT_ID</code></td><td>Auth0</td><td>Yes</td><td>Auth0 application client ID</td></tr>
+        <tr><td><code>AUTH0_CLIENT_SECRET</code></td><td>Auth0</td><td>Yes</td><td>Auth0 application client secret</td></tr>
+        <tr><td><code>AUTH0_DOMAIN</code></td><td>Auth0</td><td>Yes</td><td>Auth0 tenant domain (e.g. <code>my-tenant.us.auth0.com</code>)</td></tr>
+        <tr><td><code>GITHUB_CLIENT_ID</code></td><td>GitHub</td><td>Yes</td><td>GitHub OAuth App client ID</td></tr>
+        <tr><td><code>GITHUB_CLIENT_SECRET</code></td><td>GitHub</td><td>Yes</td><td>GitHub OAuth App client secret</td></tr>
+        <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Google</td><td>Yes</td><td>Google OAuth 2.0 client ID</td></tr>
+        <tr><td><code>GOOGLE_CLIENT_SECRET</code></td><td>Google</td><td>Yes</td><td>Google OAuth 2.0 client secret</td></tr>
+        <tr><td><code>APP_BASE_URL</code></td><td>App</td><td>No</td><td>Public base URL for logout redirect. Default: <code>http://localhost:8081</code></td></tr>
+        <tr><td><code>SERVER_PORT</code></td><td>App</td><td>No</td><td>HTTP port. Default: <code>8081</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">CI/CD Pipeline</div>
+    <div class="section-desc">Defined in <code>.github/workflows/deploy.yml</code>. Triggered on every push to <code>main</code>. Pull requests run build only — no deploy.</div>
+    <div class="pipeline">
+      <div class="pipe-step">git push → main</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">mvn verify</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Docker Build</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Push to GHCR</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">railway up</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🌐 Live</div>
+    </div>
+    <table>
+      <thead><tr><th>Job</th><th>Runs on</th><th>Tools</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td>Build &amp; Test</td><td>Every push + PR</td><td>JDK 17, Maven</td><td>Test results</td></tr>
+        <tr><td>Docker Build &amp; Push</td><td>Push to main only</td><td>Docker Buildx, GHCR</td><td><code>ghcr.io/jatinghataliya/sso-authentication:latest</code></td></tr>
+        <tr><td>Deploy to Railway</td><td>Push to main only</td><td>Railway CLI</td><td>Live deployment at Railway URL</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Project Structure</div>
+    <table>
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>SecurityConfig.java</code></td><td>OAuth2 login, RBAC rules, logout handler, token refresh filter registration</td></tr>
+        <tr><td><code>Auth0RolesExtractor.java</code></td><td>Reads <code>https://my-app.com/roles</code> from JWT, maps to Spring Security authorities</td></tr>
+        <tr><td><code>TokenRefreshFilter.java</code></td><td>Per-request filter that silently refreshes Auth0 access token before expiry</td></tr>
+        <tr><td><code>HomeController.java</code></td><td>Serves public home page with login buttons</td></tr>
+        <tr><td><code>DashboardController.java</code></td><td>Protected dashboard, admin page, user profile, <code>/api/me</code> REST endpoint</td></tr>
+        <tr><td><code>application.yml</code></td><td>All configuration using <code>${ENV_VAR}</code> placeholders</td></tr>
+        <tr><td><code>application-local.yml</code></td><td>Local dev credentials — gitignored</td></tr>
+        <tr><td><code>Dockerfile</code></td><td>Multi-stage build: JDK build stage + JRE runtime stage, non-root user</td></tr>
+        <tr><td><code>docker-compose.yml</code></td><td>Local Docker setup — reads from <code>.env</code> file</td></tr>
+        <tr><td><code>.github/workflows/deploy.yml</code></td><td>GitHub Actions CI/CD pipeline</td></tr>
+        <tr><td><code>.env.example</code></td><td>Template for all required environment variables</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Proposed Future Features</div>
+    <table>
+      <thead><tr><th>Feature</th><th>Category</th><th>Description</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td>Microsoft / Azure AD SSO</td><td>Auth</td><td>4th provider for enterprise Work/School accounts</td><td>Low</td></tr>
+        <tr><td>User Database (PostgreSQL)</td><td>Data</td><td>Persist users, login history, provider info</td><td>Medium</td></tr>
+        <tr><td>User Management UI</td><td>Admin</td><td>Admin page to list users, view providers and roles</td><td>Medium</td></tr>
+        <tr><td>MFA Enforcement</td><td>Security</td><td>Force Auth0 MFA for ADMIN role users</td><td>Medium</td></tr>
+        <tr><td>Redis Session Store</td><td>Infra</td><td>Shared sessions for horizontal scaling</td><td>Medium</td></tr>
+        <tr><td>Health Check Endpoint</td><td>Infra</td><td><code>/actuator/health</code> for Railway monitoring</td><td>Low</td></tr>
+        <tr><td>Metrics + Observability</td><td>Infra</td><td>Prometheus + Grafana via Spring Actuator</td><td>Medium</td></tr>
+        <tr><td>Audit Log</td><td>Security</td><td>Track login events, role changes, logouts</td><td>Medium</td></tr>
+        <tr><td>Unit + Integration Tests</td><td>Quality</td><td>Test roles extractor, token filter, mock OAuth2 flows</td><td>Medium</td></tr>
+        <tr><td>Session Timeout</td><td>Security</td><td>Auto-logout after configurable inactivity period</td><td>Low</td></tr>
+        <tr><td>LinkedIn OAuth2</td><td>Auth</td><td>Professional profile login, 5th provider</td><td>Low</td></tr>
+        <tr><td>Custom Domain</td><td>Infra</td><td>Map custom domain to Railway deployment</td><td>Low</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="doc-footer">
+    Made with IBM Bob
+  </div>
+</div>
+</body>
+</html>

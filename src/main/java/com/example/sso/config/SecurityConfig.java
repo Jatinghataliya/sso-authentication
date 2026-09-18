@@ -1,7 +1,9 @@
 package com.example.sso.config;
 
+import com.example.sso.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -22,6 +25,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -42,6 +46,12 @@ public class SecurityConfig {
 
     @Value("${app.base-url}")
     private String appBaseUrl;
+
+    private final UserService userService;
+
+    public SecurityConfig(@Lazy UserService userService) {
+        this.userService = userService;
+    }
 
     /**
      * OAuth2AuthorizedClientManager with refresh_token support.
@@ -75,6 +85,19 @@ public class SecurityConfig {
     }
 
     /**
+     * OAuth2 login success handler — saves/updates user in DB, then redirects to /dashboard.
+     */
+    @Bean
+    public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {
+        return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
+            if (authentication instanceof OAuth2AuthenticationToken token) {
+                userService.upsertUser(token);
+            }
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+        };
+    }
+
+    /**
      * Auth0-specific logout handler.
      * Builds: https://<domain>/v2/logout?client_id=...&returnTo=http://localhost:8081/
      */
@@ -88,7 +111,7 @@ public class SecurityConfig {
 
                 // Determine which provider was used
                 String provider = "";
-                if (authentication instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken oauthToken) {
+                if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
                     provider = oauthToken.getAuthorizedClientRegistrationId();
                 }
 
@@ -145,7 +168,8 @@ public class SecurityConfig {
                 // Publicly accessible pages
                 .requestMatchers("/", "/public/**", "/css/**", "/js/**",
                     "/access-denied", "/login",
-                    "/oauth2/authorization/**"            // OAuth2 initiation — must be public
+                    "/oauth2/authorization/**",           // OAuth2 initiation — must be public
+                    "/h2-console/**"                      // H2 web console (dev only)
                 ).permitAll()
                 // Role-protected pages
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -156,7 +180,7 @@ public class SecurityConfig {
 
             .oauth2Login(oauth2 -> oauth2
                 // No loginPage() — authenticationEntryPoint below handles redirect to /
-                .defaultSuccessUrl("/dashboard", true)
+                .successHandler(oAuth2LoginSuccessHandler())
                 .failureUrl("/?error=true")
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(oidcUserService())   // Auth0 — OIDC path
@@ -178,6 +202,9 @@ public class SecurityConfig {
                 .clearAuthentication(true)
                 .deleteCookies("JSESSIONID")
             )
+
+            // Allow H2 console iframes (same-origin)
+            .headers(h -> h.frameOptions(f -> f.sameOrigin()))
 
             // Register the token refresh filter before the auth filter
             .addFilterBefore(tokenRefreshFilter, UsernamePasswordAuthenticationFilter.class);

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Manage Users — SSO Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, "Segoe UI", sans-serif; background: #f7f8fa; color: #1f2328; }
+        header { background: #1f2328; color: #fff; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 18px; font-weight: 600; }
+        header nav a { color: #ccc; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        header nav a:hover { color: #fff; }
+        main { max-width: 960px; margin: 40px auto; padding: 0 24px; }
+        .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px 24px; }
+        .stat-card h4 { font-size: 12px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .stat-card .num { font-size: 28px; font-weight: 700; color: #3b82d4; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+        .card-header { padding: 16px 24px; border-bottom: 1px solid #e5e7eb; font-size: 13px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #e5e7eb; background: #f7f8fa; }
+        td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        .avatar-initial { width: 34px; height: 34px; border-radius: 50%; background: #3b82d4; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-auth0  { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+        .badge-github { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; }
+        .badge-google { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+        .badge-admin  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-user   { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .action-link { font-size: 13px; font-weight: 600; text-decoration: none; color: #3b82d4; margin-right: 10px; }
+        .action-link:hover { text-decoration: underline; }
+        .action-delete { color: #d1242f; }
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; }
+        .empty-state { padding: 48px 24px; text-align: center; color: #57606a; font-size: 14px; }
+        form.inline { display: inline; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🔐 SSO Demo</h1>
+    <nav>
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/admin}">Admin</a>
+        <a th:href="@{/admin/users}" style="color:#fff;">Users</a>
+        <a th:href="@{/logout}">Logout</a>
+    </nav>
+</header>
+
+<main>
+    <div class="page-title">👥 Manage Users</div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h4>Total Users</h4>
+            <div class="num" th:text="${totalUsers}">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Admins</h4>
+            <div class="num" th:text="${adminCount}">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Regular Users</h4>
+            <div class="num" th:text="${userCount}">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Providers</h4>
+            <div class="num" th:text="${providerCounts.size()}">0</div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-header">All Users</div>
+        <div th:if="${users.isEmpty()}" class="empty-state">
+            No users registered yet. Users appear here after their first login.
+        </div>
+        <table th:if="${!users.isEmpty()}">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Provider</th>
+                    <th>Role</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}">
+                    <td>
+                        <div class="avatar-initial"
+                             th:text="${user.name != null and !user.name.isEmpty()} ? ${user.name.substring(0,1).toUpperCase()} : 'U'">U</div>
+                    </td>
+                    <td th:text="${user.name}">—</td>
+                    <td th:text="${user.email}">—</td>
+                    <td>
+                        <span th:classappend="${user.provider == 'okta'} ? 'badge-auth0' : (${user.provider == 'github'} ? 'badge-github' : 'badge-google')"
+                              class="badge"
+                              th:text="${user.provider == 'okta'} ? 'Auth0' : (${user.provider == 'github'} ? 'GitHub' : 'Google')">—</span>
+                    </td>
+                    <td>
+                        <span th:classappend="${user.role == 'ADMIN'} ? 'badge-admin' : 'badge-user'"
+                              class="badge"
+                              th:text="${user.role}">USER</span>
+                    </td>
+                    <td th:text="${user.lastLoginAt != null} ? ${#temporals.format(user.lastLoginAt, 'dd MMM yyyy HH:mm')} : '—'">—</td>
+                    <td>
+                        <a class="action-link" th:href="@{/admin/users/{id}(id=${user.id})}">View</a>
+                        <form class="inline" th:action="@{/admin/users/{id}/role(id=${user.id})}" method="post">
+                            <input type="hidden" name="role"
+                                   th:value="${user.role == 'ADMIN'} ? 'USER' : 'ADMIN'"/>
+                            <button type="submit" class="action-link"
+                                    style="background:none;border:none;cursor:pointer;padding:0;font-family:inherit;"
+                                    th:text="${user.role == 'ADMIN'} ? 'Make USER' : 'Make ADMIN'">Toggle</button>
+                        </form>
+                        <form class="inline" th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                            <button type="submit" class="action-link action-delete"
+                                    style="background:none;border:none;cursor:pointer;padding:0;font-family:inherit;"
+                                    onclick="return confirm('Delete this user?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <a class="btn btn-secondary" th:href="@{/admin}">← Back to Admin</a>
+</main>
+
+</body>
+</html>

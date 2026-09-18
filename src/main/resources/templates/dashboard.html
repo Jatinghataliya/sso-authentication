@@ -57,6 +57,7 @@
         </sec:authorize>
         <sec:authorize access="hasRole('ADMIN')">
             <a th:href="@{/admin}">Admin</a>
+            <a th:href="@{/admin/users}">Manage Users</a>
         </sec:authorize>
         <a th:href="@{/logout}">Logout</a>
     </nav>
