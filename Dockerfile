@@ -1,22 +1,21 @@
 # ─────────────────────────────────────────────────────────────
 # Stage 1: Build
-#   Uses Maven + JDK 17 to compile and package the fat JAR.
-#   The Maven local repo is cached in a layer so rebuilds are fast.
+#   Installs Maven via apk, downloads dependencies, then packages
+#   the fat JAR. pom.xml is copied first so the dependency layer
+#   is cached and only re-downloaded when pom.xml changes.
 # ─────────────────────────────────────────────────────────────
 FROM eclipse-temurin:17-jdk-alpine AS build
 
 WORKDIR /app
 
-# Copy dependency descriptors first — Docker caches this layer
-# and only re-downloads when pom.xml changes.
-COPY pom.xml .
-COPY .mvn/ .mvn/
-RUN test -f mvnw && chmod +x mvnw || true
+# Install Maven (no Maven wrapper in this project)
+RUN apk add --no-cache maven
 
-# Download all dependencies (offline cache layer)
+# Copy pom.xml first — Docker caches this layer until pom.xml changes
 COPY pom.xml .
-RUN apk add --no-cache maven \
- && mvn dependency:go-offline -q
+
+# Download all dependencies (cached layer)
+RUN mvn dependency:go-offline -q
 
 # Copy source and build the fat JAR (skip tests — run them separately)
 COPY src ./src
