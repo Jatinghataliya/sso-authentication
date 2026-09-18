@@ -28,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -201,9 +202,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 // Redirect to home with ?expired=true when session times out
                 .invalidSessionUrl("/?expired=true")
-                // Only one session per user at a time
-                .maximumSessions(1)
-                .expiredUrl("/?expired=true")
+                // Only one session per user at a time — requires HttpSessionEventPublisher bean
+                .sessionConcurrency(concurrency -> concurrency
+                    .maximumSessions(1)
+                    .expiredUrl("/?expired=true")
+                )
             )
 
             .logout(logout -> logout
@@ -221,5 +224,14 @@ public class SecurityConfig {
             .addFilterBefore(tokenRefreshFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Required for maximumSessions(1) to work — publishes session lifecycle
+     * events so Spring Security can track concurrent sessions.
+     */
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }
