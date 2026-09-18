@@ -230,6 +230,52 @@ Visit [http://localhost:8081](http://localhost:8081)
 
 ---
 
+## Running with Docker
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### 1. Create your `.env` file
+
+```bash
+cp .env.example .env
+# Edit .env and fill in all credentials
+```
+
+### 2. Build and start
+
+```bash
+docker compose up --build
+```
+
+The app will be available at [http://localhost:8081](http://localhost:8081).
+
+### Other useful commands
+
+```bash
+docker compose up -d          # start in background (detached)
+docker compose logs -f        # follow logs
+docker compose down           # stop and remove container
+docker compose build          # rebuild image without starting
+```
+
+### How the Dockerfile works
+
+```
+Stage 1 — Build  (eclipse-temurin:17-jdk-alpine)
+  └─ mvn package -DskipTests  →  target/sso-okta-*.jar
+
+Stage 2 — Runtime  (eclipse-temurin:17-jre-alpine)
+  └─ copies fat JAR only
+  └─ runs as non-root user (appuser)
+  └─ exposes port 8081
+  └─ reads all credentials from environment variables
+```
+
+> Secrets are **never baked into the image** — all credentials are injected at runtime via environment variables.
+
+---
+
 ## Endpoints
 
 | URL | Access | Description |

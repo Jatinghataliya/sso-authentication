@@ -1,0 +1,43 @@
+# Docker Compose for local development and testing.
+#
+# Credentials are loaded from a .env file (gitignored).
+# Copy .env.example → .env and fill in your values before running.
+#
+# Usage:
+#   docker compose up --build        # build image and start
+#   docker compose up -d             # start in background
+#   docker compose down              # stop and remove container
+#   docker compose logs -f           # follow logs
+
+services:
+  sso-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sso-demo:latest
+    container_name: sso-demo
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    environment:
+      # Auth0 (OIDC)
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      # GitHub (OAuth2)
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      # Google (OIDC)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # App
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8081}
+      SERVER_PORT: "8081"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
