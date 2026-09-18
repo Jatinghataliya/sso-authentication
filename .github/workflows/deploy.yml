@@ -116,10 +116,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
       - name: Deploy to Railway
-        run: railway up --detach --service sso-authentication
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}   # Set in GitHub repo secrets
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE_ID }}
