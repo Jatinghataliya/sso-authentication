@@ -171,7 +171,8 @@ public class SecurityConfig {
                     "/oauth2/authorization/**",           // OAuth2 initiation — must be public
                     "/h2-console/**",                     // H2 web console (dev only)
                     "/actuator/health",                   // Railway health probe — must be public
-                    "/actuator/info"                      // App info — public
+                    "/actuator/info",                     // App info — public
+                    "/api/session-status"                 // Session countdown — must be public (returns 0 when expired)
                 ).permitAll()
                 // Role-protected pages
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -195,6 +196,14 @@ public class SecurityConfig {
                 .authenticationEntryPoint((request, response, authException) ->
                     response.sendRedirect(request.getContextPath() + "/"))
                 .accessDeniedPage("/access-denied")
+            )
+
+            .sessionManagement(session -> session
+                // Redirect to home with ?expired=true when session times out
+                .invalidSessionUrl("/?expired=true")
+                // Only one session per user at a time
+                .maximumSessions(1)
+                .expiredUrl("/?expired=true")
             )
 
             .logout(logout -> logout

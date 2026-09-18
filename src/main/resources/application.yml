@@ -2,6 +2,9 @@ server:
   port: ${SERVER_PORT:8081}
   # Trust X-Forwarded-Proto from Railway's reverse proxy so redirect URIs use https://
   forward-headers-strategy: NATIVE
+  servlet:
+    session:
+      timeout: ${SESSION_TIMEOUT:30m}   # default 30 min; override via env var
 
 spring:
   application:

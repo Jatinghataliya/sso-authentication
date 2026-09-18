@@ -43,9 +43,13 @@
         .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; }
         .btn-danger { background: #fff; color: #d1242f; border: 1px solid #d1242f; }
         .btn-secondary { background: #fff; color: #1f2328; border: 1px solid #e5e7eb; margin-right: 10px; }
+        /* Session warning banner offset */
+        body.has-warning { padding-top: 48px; }
     </style>
 </head>
 <body>
+
+<div th:replace="~{fragments/session-timeout :: sessionTimeoutBanner}"></div>
 
 <header>
     <h1>🔐 SSO Demo</h1>

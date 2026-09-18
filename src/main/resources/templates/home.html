@@ -48,6 +48,14 @@
 </header>
 
 <main>
+    <!-- Session expired flash message -->
+    <div th:if="${param.expired}"
+         style="background:#fef3c7; border:1px solid #fcd34d; border-radius:6px;
+                padding:12px 20px; margin-bottom:24px; font-size:14px; color:#92400e;
+                display:flex; align-items:center; gap:10px;">
+        ⚠ Your session expired due to inactivity. Please log in again.
+    </div>
+
     <h2>Single Sign-On Demo</h2>
     <p class="subtitle">Spring Boot 3 + Spring Security — supports multiple Identity Providers.<br/>
         Choose a provider below to authenticate.</p>
